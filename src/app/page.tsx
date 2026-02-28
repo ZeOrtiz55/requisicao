@@ -139,7 +139,24 @@ export default function Home() {
           setTimeout(() => carregarDados(true), 2500);
           setTimeout(() => setToasts(prev => prev.filter(t => t.id !== info.id)), 10000);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'Requisicao' }, () => carregarDados(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Requisicao' }, (payload) => {
+        const norm = (r: any) => ({
+          ...r,
+          status: r.status || 'pedido',
+          tipo: r.tipo || r.ReqTipo || 'Peça',
+          titulo: r.titulo || "",
+          solicitante: r.solicitante || "",
+          setor: r.setor || "",
+          veiculo: r.veiculo || "",
+          hodometro: r.hodometro || "",
+          valor_despeza: r.valor_despeza || "0,00",
+          obs: r.obs || "",
+          quem_ferramenta: r.quem_ferramenta || ""
+        });
+        if (payload.eventType === 'INSERT') setRequisicoes(prev => [norm(payload.new), ...prev]);
+        else if (payload.eventType === 'UPDATE') setRequisicoes(prev => prev.map(r => r.id === payload.new.id ? norm(payload.new) : r));
+        else if (payload.eventType === 'DELETE') setRequisicoes(prev => prev.filter(r => r.id !== (payload.old as any).id));
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'req_usuarios' }, () => carregarDados(true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'SupaPlacas' }, () => carregarDados(true))
       .subscribe();
@@ -220,7 +237,7 @@ export default function Home() {
             {abaAtiva === 'kanban' && (
               <Kanban 
                 requisicoes={requisicoes} 
-                onUpdate={async (id: number, dados: Record<string, unknown>) => { await supabase.from('Requisicao').update(dados).eq('id', id); carregarDados(true); }}
+                onUpdate={async (id: number, dados: Record<string, unknown>) => { await supabase.from('Requisicao').update(dados).eq('id', id); }}
                 onPrint={dispararImpressao} // PASSA A FUNÇÃO PARA O KANBAN
               />
             )}
