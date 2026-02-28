@@ -159,7 +159,9 @@ export default function Home() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'req_usuarios' }, () => carregarDados(true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'SupaPlacas' }, () => carregarDados(true))
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log('[Realtime] status:', status, err ? err : '');
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [carregarDados]);
