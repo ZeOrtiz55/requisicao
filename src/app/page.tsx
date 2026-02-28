@@ -237,7 +237,7 @@ export default function Home() {
             )}
             {abaAtiva === 'form_usuario' && <div className="max-w-3xl mx-auto py-20 px-4"><div className="bg-slate-900 rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden text-white"><FormUsuario usuarioParaEditar={usuarioEditando} onSave={salvarUsuario} onCancel={() => setAbaAtiva('usuarios')} /></div></div>}
             {abaAtiva === 'form_veiculo' && <div className="max-w-3xl mx-auto py-20 px-4"><div className="bg-slate-900 rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden text-white"><FormVeiculo veiculoParaEditar={veiculoEditando} onSave={salvarVeiculo} onCancel={() => setAbaAtiva('veiculos')} /></div></div>}
-            {abaAtiva === 'fornecedores' && <div className="p-20"><FormFornecedor onSave={async (n) => { await supabase.from('Fornecedores').insert([n]); setAbaAtiva('kanban'); }} /></div>}
+            {abaAtiva === 'fornecedores' && <div className="p-20"><FormFornecedor onSave={async (n: Record<string, unknown>) => { await supabase.from('Fornecedores').insert([n]); setAbaAtiva('kanban'); }} /></div>}
           </div>
         )}
       </section>
@@ -247,7 +247,7 @@ export default function Home() {
       {abaAtiva === 'form' && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 print:hidden">
           <div className="w-full max-w-5xl bg-slate-900 rounded-[3rem] p-1 border border-white/10 overflow-y-auto max-h-[90vh] text-white shadow-2xl">
-            <FormReq onSave={async (nova) => { await supabase.from('Requisicao').insert([nova]); setAbaAtiva('kanban'); carregarDados(true); }} />
+            <FormReq onSave={async (nova: Record<string, unknown>) => { await supabase.from('Requisicao').insert([nova]); setAbaAtiva('kanban'); carregarDados(true); }} />
           </div>
         </div>
       )}
