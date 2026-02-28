@@ -219,7 +219,7 @@ export default function Home() {
             {abaAtiva === 'kanban' && (
               <Kanban 
                 requisicoes={requisicoes} 
-                onUpdate={async (id, dados) => { await supabase.from('Requisicao').update(dados).eq('id', id); carregarDados(true); }}
+                onUpdate={async (id: number, dados: Record<string, unknown>) => { await supabase.from('Requisicao').update(dados).eq('id', id); carregarDados(true); }}
                 onPrint={dispararImpressao} // PASSA A FUNÇÃO PARA O KANBAN
               />
             )}
