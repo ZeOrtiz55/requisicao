@@ -19,23 +19,22 @@ const USUARIOS = ["Danilo de Souza", "Fernando Leonel", "Gabriel Moraes", "Henri
 
 export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate: any, onPrint: any }) {
   const [modalAberto, setModalAberto] = useState(false);
-  const [modalCotacaoAberto, setModalCotacaoAberto] = useState(false); // NOVO: Modal de Cotação
   const [localData, setLocalData] = useState(req);
-  const [cotacaoData, setCotacaoData] = useState<any>({}); // NOVO: Dados da Cotação
-  const [fornecedoresVisiveis, setFornecedoresVisiveis] = useState(1); // NOVO: Controle de quantos aparecem
   const [userEmail, setUserEmail] = useState('Buscando...');
 
   const veioDoApp = req.obs?.includes('[APPSHEET_ID:');
 
-  // CAPTURA AUTOMÁTICA DO EMAIL DO USUÁRIO LOGADO
+  // CAPTURA AUTOMÁTICA DO EMAIL DO USUÁRIO LOGADO - CORRIGIDO PARA EVITAR AuthSessionMissingError
   useEffect(() => {
     let isMounted = true;
     const getUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        
         if (session && isMounted) {
           const { data: { user }, error } = await supabase.auth.getUser();
           if (error) throw error;
+          
           if (user?.email) {
             setUserEmail(user.email);
             setLocalData((prev: any) => ({ ...prev, impresso_por: user.email }));
@@ -53,59 +52,27 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     return () => { isMounted = false; };
   }, []);
 
-  // REALTIME BRIDGE E CARREGAMENTO DE COTAÇÃO
+  // REALTIME BRIDGE: Esta função garante que o card atualize sozinho quando o banco de dados mudar
   useEffect(() => { 
     setLocalData({
       ...req,
       quem_ferramenta: req.quem_ferramenta || req.ferramenta_quem || ""
     }); 
-    
-    // Busca cotação vinculada ao ID da requisição
-    const buscarCotacao = async () => {
-      const { data } = await supabase.from('req_cotacao').select('*').eq('id', req.id).single();
-      if (data) {
-        setCotacaoData(data);
-        // Calcula quantos fornecedores têm dados para exibir corretamente
-        let count = 1;
-        for (let i = 2; i <= 5; i++) {
-          if (data[`fornecedor${i}`]) count = i;
-        }
-        setFornecedoresVisiveis(count);
-      }
-    };
-    buscarCotacao();
   }, [req]);
 
-  // DATA AUTOMÁTICA PARA O FINANCEIRO
+  // --- NOVA ALTERAÇÃO: DATA AUTOMÁTICA PARA O FINANCEIRO ---
   useEffect(() => {
+    // Se o status for financeiro e a data de envio ainda não estiver preenchida
     if (req.status === 'financeiro' && !req.enviado_financeiro_data) {
-      const hoje = new Date().toISOString().split('T')[0];
+      const hoje = new Date().toISOString().split('T')[0]; // Gera data YYYY-MM-DD
       onUpdate(req.id, { enviado_financeiro_data: hoje });
     }
   }, [req.status, req.enviado_financeiro_data, req.id, onUpdate]);
+  // ---------------------------------------------------------
 
   const persist = (name: string, value: any) => {
     if (req[name] === value) return;
     onUpdate(req.id, { [name]: value });
-  };
-
-  // FUNÇÃO PARA LIMPAR COTAÇÃO ESPECÍFICA
-  const removerCotacao = (idx: number) => {
-    if (confirm(`Deseja limpar todos os dados do Fornecedor ${idx}?`)) {
-        setCotacaoData({
-            ...cotacaoData,
-            [`fornecedor${idx}`]: '',
-            [`servico_material${idx}`]: '',
-            [`valor${idx}`]: '',
-            [`obs${idx}`]: ''
-        });
-    }
-  };
-
-  const salvarCotacao = async () => {
-    const { error } = await supabase.from('req_cotacao').upsert({ id: req.id, ...cotacaoData });
-    if (!error) alert("Cotação salva com sucesso!");
-    else console.error(error);
   };
 
   const getUrlAnexo = (caminho: string) => {
@@ -125,8 +92,10 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
 
   const handlePrint = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation(); 
+    
     const dadosComEmail = { ...localData, impresso_por: userEmail };
     onPrint(dadosComEmail);
+
     if (req.status === 'pedido') persist('status', 'aguardando');
   };
 
@@ -155,11 +124,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
           </div>
         )}
 
-        <div className="absolute top-6 right-6 flex gap-2">
-           <button onClick={(e) => { e.stopPropagation(); setModalCotacaoAberto(true); }} className="p-3 rounded-2xl bg-white/80 text-blue-600 hover:bg-blue-600 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm" title="Cotações"><ClipboardList size={16} /></button>
-           <button onClick={handlePrint} className="p-3 rounded-2xl bg-white/80 text-slate-500 hover:bg-blue-600 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"><Printer size={16} /></button>
-        </div>
-        
+        <button onClick={handlePrint} className="absolute top-6 right-6 p-3 rounded-2xl bg-white/80 text-slate-500 hover:bg-blue-600 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"><Printer size={16} /></button>
         <button onClick={handleTrash} className="absolute bottom-6 right-6 p-3 rounded-2xl bg-white/50 text-slate-400 hover:bg-red-600 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"><Trash2 size={16} /></button>
 
         <div className="flex items-start gap-4 mb-5 mt-2">
@@ -192,84 +157,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
         </div>
       </div>
 
-      {/* MODAL COTAÇÃO */}
-      {modalCotacaoAberto && (
-        <div className="fixed inset-0 bg-blue-900/40 backdrop-blur-xl z-[60] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200">
-          <div className="bg-slate-300 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[3rem] shadow-2xl border border-white flex flex-col">
-            <div className="sticky top-0 bg-slate-300/90 backdrop-blur-md px-10 py-8 border-b border-slate-400/30 flex justify-between items-center z-10">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><ClipboardList size={24}/></div>
-                <div>
-                  <h2 className="text-2xl font-light text-slate-900 uppercase tracking-tight">Mapa de Cotações</h2>
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">ID: {req.id} • Seleção de Fornecedores</p>
-                </div>
-              </div>
-              <button onClick={() => setModalCotacaoAberto(false)} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/50 text-slate-600 hover:bg-slate-900 hover:text-white transition-all transform hover:rotate-90 shadow-md"><X size={20}/></button>
-            </div>
-
-            <div className="p-10 space-y-6">
-              {[...Array(fornecedoresVisiveis)].map((_, i) => {
-                const idx = i + 1;
-                return (
-                  <div key={idx} className={`${bentoStyle} border-l-[8px] border-l-blue-500 animate-in slide-in-from-right-4 duration-300 relative`}>
-                    <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">{idx}</div>
-                      <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800">Fornecedor {idx}</h3>
-                      
-                      {/* BOTÃO X PARA REMOVER/LIMPAR COTAÇÃO */}
-                      <button 
-                        onClick={() => removerCotacao(idx)} 
-                        className="ml-auto p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-all shadow-sm"
-                        title="Limpar este fornecedor"
-                      >
-                        <X size={16}/>
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                      <div>
-                        <label className={labelStyle}><Store size={14}/> Nome da Empresa</label>
-                        <input value={cotacaoData[`fornecedor${idx}`] || ''} onChange={e => setCotacaoData({...cotacaoData, [`fornecedor${idx}`]: e.target.value.toUpperCase()})} className={inputStyle} />
-                      </div>
-                      <div>
-                        <label className={labelStyle}><Layers size={14}/> Material/Serviço</label>
-                        <input value={cotacaoData[`servico_material${idx}`] || ''} onChange={e => setCotacaoData({...cotacaoData, [`servico_material${idx}`]: e.target.value.toUpperCase()})} className={inputStyle} />
-                      </div>
-                      <div>
-                        <label className={labelStyle}><DollarSign size={14}/> Valor Ofertado (R$)</label>
-                        <input value={cotacaoData[`valor${idx}`] || ''} onChange={e => setCotacaoData({...cotacaoData, [`valor${idx}`]: e.target.value})} className={inputStyle} placeholder="0,00" />
-                      </div>
-                    </div>
-                    <div className="mt-6">
-                      <label className={labelStyle}><FileText size={14}/> Observações do Item</label>
-                      <input value={cotacaoData[`obs${idx}`] || ''} onChange={e => setCotacaoData({...cotacaoData, [`obs${idx}`]: e.target.value})} className={inputStyle} placeholder="Condição de pagamento, prazo, etc..." />
-                    </div>
-                  </div>
-                );
-              })}
-
-              <div className="flex flex-col md:flex-row gap-4 pt-6">
-                {fornecedoresVisiveis < 5 && (
-                  <button 
-                    onClick={() => setFornecedoresVisiveis(prev => prev + 1)}
-                    className="flex-1 bg-white border-2 border-dashed border-blue-400 text-blue-600 py-6 rounded-3xl font-bold uppercase text-[10px] tracking-widest hover:bg-blue-50 transition-all flex items-center justify-center gap-3"
-                  >
-                    <Plus size={18}/> Adicionar Fornecedor ({fornecedoresVisiveis + 1}/5)
-                  </button>
-                )}
-                <button 
-                  onClick={salvarCotacao}
-                  className="flex-1 bg-slate-900 text-white py-6 rounded-3xl font-bold uppercase text-[10px] tracking-[0.3em] hover:bg-blue-600 shadow-xl transition-all flex items-center justify-center gap-3"
-                >
-                  <CheckCheck size={18}/> Salvar Mapa de Preços
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL DETALHADO (FICHA TÉCNICA) */}
+      {/* MODAL DETALHADO */}
       {modalAberto && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-6 print:hidden">
           <div className="bg-slate-300 w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-[4rem] shadow-2xl border border-white flex flex-col animate-in fade-in zoom-in-95 duration-200">
@@ -471,20 +359,12 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                     {userEmail || 'Buscando usuário...'}
                   </div>
                 </div>
-                <div className="flex flex-col md:flex-row gap-4 w-full max-2-2xl">
-                    <button 
-                    onClick={() => setModalCotacaoAberto(true)} 
-                    className="flex-1 bg-blue-600 text-white px-8 py-6 rounded-full font-bold uppercase text-[12px] tracking-[0.2em] hover:bg-blue-700 hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 shadow-xl"
-                    >
-                    <ClipboardList size={20} /> Mapa de Cotação
-                    </button>
-                    <button 
-                    onClick={handlePrint} 
-                    className="flex-1 bg-slate-900 text-white px-8 py-6 rounded-full font-bold uppercase text-[12px] tracking-[0.2em] hover:bg-blue-600 hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 shadow-xl"
-                    >
-                    <Printer size={20} /> Gerar PDF Requisição
-                    </button>
-                </div>
+                <button 
+                  onClick={handlePrint} 
+                  className="w-full max-w-md bg-slate-900 text-white px-12 py-6 rounded-full font-bold uppercase text-[12px] tracking-[0.4em] hover:bg-blue-600 hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 shadow-xl"
+                >
+                  <Printer size={20} /> Gerar PDF Requisição
+                </button>
               </div>
             </div>
           </div>
