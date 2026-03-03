@@ -7,7 +7,6 @@ import FormReq from './components/FormReq';
 import FormFornecedor from './components/FormFornecedor';
 import FormUsuario from './components/FormUsuario'; 
 import FormVeiculo from './components/FormVeiculo'; 
-// ATUALIZADO PARA O NOVO TEMPLATE
 import TemplatePDF from './components/TemplatePDF'; 
 import { 
   LayoutDashboard, Users2, Box, Activity, Trash2, Plus, X, UserPlus, Car, Bell, Info, CheckCheck, UserCircle, Edit3, Phone
@@ -22,16 +21,15 @@ export default function Home() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState<any>(null); 
   const [veiculoEditando, setVeiculoEditando] = useState<any>(null); 
-  
-  // ESTADO PARA IMPRESSÃO (AUTO E MANUAL)
   const [reqParaImprimir, setReqParaImprimir] = useState<any>(null);
-
   const [notificacoes, setNotificacoes] = useState<any[]>([]); 
   const [toasts, setToasts] = useState<any[]>([]);             
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [contadorNotif, setContadorNotif] = useState(0);
 
-  // FUNÇÃO MESTRE DE IMPRESSÃO (CHAMADA PELO CARD OU PELO AUTO-PRINT)
+  // ESTADO PARA COMUNICAR ABERTURA DE CARD AO KANBAN
+  const [idDestaque, setIdDestaque] = useState<any>(null);
+
   const dispararImpressao = (dados: any) => {
     setReqParaImprimir(dados);
     setTimeout(() => {
@@ -40,22 +38,32 @@ export default function Home() {
     }, 800);
   };
 
+  const abrirNotificacao = (idReq: any) => {
+    setAbaAtiva('kanban');
+    setIdDestaque(idReq);
+    setShowNotifModal(false);
+    // Limpa o destaque logo após para permitir re-clique se necessário
+    setTimeout(() => setIdDestaque(null), 500);
+  };
+
   const tocarAlerta = () => {
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const bip = (delay: number, freq: number) => {
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.type = 'triangle'; 
-        oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime + delay); 
-        gainNode.gain.setValueAtTime(0.7, audioCtx.currentTime + delay); 
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.4);
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.start(audioCtx.currentTime + delay);
-        oscillator.stop(audioCtx.currentTime + delay + 0.4);
-      };
-      bip(0, 1600); bip(0.2, 2000); bip(0.4, 1600);
+      if (typeof window !== 'undefined') {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const bip = (delay: number, freq: number) => {
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          oscillator.type = 'triangle'; 
+          oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime + delay); 
+          gainNode.gain.setValueAtTime(0.7, audioCtx.currentTime + delay); 
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.4);
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          oscillator.start(audioCtx.currentTime + delay);
+          oscillator.stop(audioCtx.currentTime + delay + 0.4);
+        };
+        bip(0, 1600); bip(0.2, 2000); bip(0.4, 1600);
+      }
     } catch (e) { console.error("Erro áudio:", e); }
   };
 
@@ -73,14 +81,14 @@ export default function Home() {
           ...r, 
           status: r.status || 'pedido', 
           tipo: r.tipo || r.ReqTipo || 'Peça',
-          titulo: r.titulo || "", 
-          solicitante: r.solicitante || "", 
-          setor: r.setor || "",
-          veiculo: r.veiculo || "", 
-          hodometro: r.hodometro || "", 
+          titulo: r.titulo || r.Material_Serv_Solicitado || "", 
+          solicitante: r.solicitante || r.ReqSolicitante || "", 
+          setor: r.setor || r.ReqQuem || "",
+          veiculo: r.veiculo || r.ReqVeiculo || "", 
+          hodometro: r.hodometro || r.ReqHodometro || "", 
           valor_despeza: r.valor_despeza || "0,00", 
-          obs: r.obs || "",
-          quem_ferramenta: r.quem_ferramenta || "" // MAPEAMENTO DA NOVA COLUNA NO ESTADO
+          obs: r.obs || r.Motivo || r.ReqMotivo || "",
+          quem_ferramenta: r.quem_ferramenta || r.ferramenta_quem || "" 
         })));
       }
       if (resUser.data) setUsuarios(resUser.data);
@@ -97,9 +105,10 @@ export default function Home() {
           const nova = payload.new;
           
           const info = { 
-            id: Date.now(), 
+            id: Date.now(),
+            idOriginal: nova.IdReq, 
             titulo: nova.Material_Serv_Solicitado || "Nova Solicitação", 
-            solicitante: "Técnico (APP)", 
+            solicitante: nova.ReqEmail || "Técnico (APP)", 
             tipoNotif: "Nova Solicitação!", 
             hora: new Date().toLocaleTimeString() 
           };
@@ -107,9 +116,8 @@ export default function Home() {
           setNotificacoes(prev => [info, ...prev]);
           setContadorNotif(prev => prev + 1);
 
-          // MAPEAMENTO REALTIME: ferramenta_quem -> quem_ferramenta
           const printData = {
-            id: "NOVA",
+            id: nova.IdReq || "NOVA",
             titulo: nova.Material_Serv_Solicitado || "SOLICITAÇÃO APP",
             tipo: nova.ReqTipo || "Peça",
             solicitante: nova.ReqEmail || "Técnico",
@@ -118,20 +126,27 @@ export default function Home() {
             veiculo: nova.ReqVeiculo || "",
             hodometro: nova.ReqHodometro || "",
             Motivo: nova.ReqMotivo || "",
-            obs: nova.ReqObs || "",
+            obs: nova.ReqMotivo || "", 
             valor_despeza: "0,00",
             impresso_por: "AUTO-GERADO PELO APP",
-            quem_ferramenta: nova.ferramenta_quem || "" // NOVA LINHA DE INTEGRAÇÃO
+            quem_ferramenta: nova.ferramenta_quem || "" 
           };
 
-          dispararImpressao(printData); // Chama a função mestre
+          dispararImpressao(printData);
           carregarDados(true);
           setTimeout(() => carregarDados(true), 2500); 
           setTimeout(() => setToasts(prev => prev.filter(t => t.id !== info.id)), 10000);
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Supa-AtualizarReq' }, (payload) => {
           tocarAlerta();
-          const info = { id: Date.now(), titulo: "Card Sincronizado", solicitante: "Técnico (APP)", tipoNotif: "Card Atualizado!", hora: new Date().toLocaleTimeString() };
+          const info = { 
+            id: Date.now(), 
+            idOriginal: payload.new.ReqREF,
+            titulo: "Card Sincronizado", 
+            solicitante: "Técnico (APP)", 
+            tipoNotif: "Card Atualizado!", 
+            hora: new Date().toLocaleTimeString() 
+          };
           setToasts(prev => [info, ...prev]);
           setNotificacoes(prev => [info, ...prev]);
           setContadorNotif(prev => prev + 1);
@@ -139,29 +154,10 @@ export default function Home() {
           setTimeout(() => carregarDados(true), 2500);
           setTimeout(() => setToasts(prev => prev.filter(t => t.id !== info.id)), 10000);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'Requisicao' }, (payload) => {
-        const norm = (r: any) => ({
-          ...r,
-          status: r.status || 'pedido',
-          tipo: r.tipo || r.ReqTipo || 'Peça',
-          titulo: r.titulo || "",
-          solicitante: r.solicitante || "",
-          setor: r.setor || "",
-          veiculo: r.veiculo || "",
-          hodometro: r.hodometro || "",
-          valor_despeza: r.valor_despeza || "0,00",
-          obs: r.obs || "",
-          quem_ferramenta: r.quem_ferramenta || ""
-        });
-        if (payload.eventType === 'INSERT') setRequisicoes(prev => [norm(payload.new), ...prev]);
-        else if (payload.eventType === 'UPDATE') setRequisicoes(prev => prev.map(r => r.id === payload.new.id ? norm(payload.new) : r));
-        else if (payload.eventType === 'DELETE') setRequisicoes(prev => prev.filter(r => r.id !== (payload.old as any).id));
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Requisicao' }, () => {
+        carregarDados(true);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'req_usuarios' }, () => carregarDados(true))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'SupaPlacas' }, () => carregarDados(true))
-      .subscribe((status, err) => {
-        console.log('[Realtime] status:', status, err ? err : '');
-      });
+      .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [carregarDados]);
@@ -178,17 +174,26 @@ export default function Home() {
     setVeiculoEditando(null); setAbaAtiva('veiculos'); carregarDados(true);
   };
 
-  const menuItemStyle = (id: string) => `flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 group ${abaAtiva === id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-white/5'}`;
+  const menuItemStyle = (id: string) => `
+    flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group
+    ${abaAtiva === id 
+      ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20' 
+      : 'text-slate-400 hover:bg-white/5 border border-transparent'}
+  `;
 
   return (
     <main className="min-h-screen bg-slate-800 font-montserrat text-slate-100 flex overflow-hidden">
       
-      {/* O TEMPLATE DE PDF FICA AQUI NA RAIZ DA HOME (FUNCIONALIDADE PDF) */}
-      {reqParaImprimir && <TemplatePDF req={reqParaImprimir} />}
+      {reqParaImprimir && <TemplatePDF req={reqParaImprimir} onUpdate={() => {}} onPrint={() => {}} />}
 
+      {/* Histórico e Toasts - CLICÁVEIS */}
       <div className="fixed top-6 right-6 z-[200] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
         {toasts.map((t: any) => (
-          <div key={t.id} className="pointer-events-auto animate-in slide-in-from-right bg-slate-900 border-l-4 border-blue-500 p-5 rounded-2xl shadow-2xl flex gap-4 items-center ring-1 ring-white/10">
+          <div 
+            key={t.id} 
+            onClick={() => abrirNotificacao(t.idOriginal)}
+            className="pointer-events-auto cursor-pointer hover:scale-[1.02] transition-transform animate-in slide-in-from-right bg-slate-900/90 backdrop-blur-xl border-l-4 border-blue-500 p-5 rounded-2xl shadow-2xl flex gap-4 items-center ring-1 ring-white/10"
+          >
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-900/40"><Bell size={20} /></div>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{t.tipoNotif}</p>
@@ -204,10 +209,14 @@ export default function Home() {
             <div className="p-8 border-b border-white/5 flex justify-between items-center"><h2 className="text-xl font-black uppercase tracking-tighter text-white">Histórico</h2><button onClick={() => { setShowNotifModal(false); setContadorNotif(0); }} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-red-500 transition-all text-white"><X size={18} /></button></div>
             <div className="flex-1 overflow-y-auto p-6 space-y-3">
               {notificacoes.length === 0 ? <p className="text-center text-slate-600 text-xs mt-20 uppercase font-bold tracking-widest">Sem novas notificações</p> : notificacoes.map((n: any) => (
-                  <div key={n.id} className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <div 
+                    key={n.id} 
+                    onClick={() => abrirNotificacao(n.idOriginal)}
+                    className="bg-white/5 p-4 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group"
+                  >
                     <div className="flex justify-between text-[9px] font-bold text-blue-500 mb-1"><span>{n.hora}</span> <CheckCheck size={12}/></div>
                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-1">{n.tipoNotif}</p>
-                    <p className="text-sm font-bold text-slate-200">{n.titulo}</p>
+                    <p className="text-sm font-bold text-slate-200 group-hover:text-blue-400 transition-colors">{n.titulo}</p>
                     <p className="text-[10px] text-slate-400 uppercase">{n.solicitante}</p>
                   </div>
                 ))}
@@ -217,30 +226,66 @@ export default function Home() {
         </div>
       )}
 
-      <aside onMouseEnter={() => setMenuAberto(true)} onMouseLeave={() => setMenuAberto(false)} className={`fixed left-0 top-0 h-full bg-slate-950/60 backdrop-blur-2xl border-r border-white/5 z-50 transition-all duration-500 flex flex-col ${menuAberto ? 'w-72 px-6' : 'w-20 px-4'}`}>
+      {/* Menu Lateral - REDESENHADO */}
+      <aside onMouseEnter={() => setMenuAberto(true)} onMouseLeave={() => setMenuAberto(false)} className={`fixed left-0 top-0 h-full bg-slate-950/80 backdrop-blur-3xl border-r border-white/5 z-50 transition-all duration-500 flex flex-col ${menuAberto ? 'w-64 px-4' : 'w-20 px-3'}`}>
         <div className="py-10 flex items-center gap-4 overflow-hidden px-2">
-          <div className="min-w-[48px] h-[48px] bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-900/20"><Box size={24} /></div>
+          <div className="min-w-[44px] h-[44px] bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/30"><Box size={22} /></div>
           <div className={`transition-opacity duration-300 whitespace-nowrap ${menuAberto ? 'opacity-100' : 'opacity-0'}`}><h1 className="text-sm font-black uppercase tracking-tighter text-white">Nova Tratores</h1></div>
         </div>
-        <nav className="flex-1 space-y-3 mt-4">
-          <button onClick={() => setAbaAtiva('kanban')} className={menuItemStyle('kanban')}><LayoutDashboard size={20} /><span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Kanban</span></button>
-          <button onClick={() => setShowNotifModal(true)} className={`${menuItemStyle('notif')} relative`}><Bell size={20} /><span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Notificações</span>
-            {contadorNotif > 0 && <span className="absolute top-3 left-8 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce border-2 border-slate-950">{contadorNotif}</span>}
+        
+        <nav className="flex-1 space-y-2 mt-4">
+          <button onClick={() => setAbaAtiva('kanban')} className={menuItemStyle('kanban')}>
+            {abaAtiva === 'kanban' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            <LayoutDashboard size={20} />
+            <span className={`text-[11px] font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Kanban</span>
           </button>
-          <button onClick={() => setAbaAtiva('usuarios')} className={menuItemStyle('usuarios')}><UserCircle size={20} /><span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Usuários</span></button>
-          <button onClick={() => setAbaAtiva('veiculos')} className={menuItemStyle('veiculos')}><Car size={20} /><span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Veículos</span></button>
-          <button onClick={() => setAbaAtiva('fornecedores')} className={menuItemStyle('fornecedores')}><Users2 size={20} /><span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Fornecedores</span></button>
+
+          <button onClick={() => { setShowNotifModal(true); setContadorNotif(0); }} className={`${menuItemStyle('notif')} relative`}>
+            <Bell size={20} />
+            <span className={`text-[11px] font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Alertas</span>
+            {contadorNotif > 0 && <span className="absolute top-2.5 left-7 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce border-2 border-slate-950">{contadorNotif}</span>}
+          </button>
+
+          <button onClick={() => setAbaAtiva('usuarios')} className={menuItemStyle('usuarios')}>
+            {abaAtiva === 'usuarios' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            <UserCircle size={20} />
+            <span className={`text-[11px] font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Usuários</span>
+          </button>
+
+          <button onClick={() => setAbaAtiva('veiculos')} className={menuItemStyle('veiculos')}>
+            {abaAtiva === 'veiculos' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            <Car size={20} />
+            <span className={`text-[11px] font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Veículos</span>
+          </button>
+
+          <button onClick={() => setAbaAtiva('fornecedores')} className={menuItemStyle('fornecedores')}>
+            {abaAtiva === 'fornecedores' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            <Users2 size={20} />
+            <span className={`text-[11px] font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Forn.</span>
+          </button>
         </nav>
+
+        <div className={`p-4 mb-6 transition-opacity duration-300 ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>
+           <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-slate-300 uppercase">Online</span>
+              </div>
+           </div>
+        </div>
       </aside>
 
-      <section className={`flex-1 transition-all duration-500 ${menuAberto ? 'ml-72' : 'ml-20'} print:hidden`}>
+      {/* Conteúdo Principal */}
+      <section className={`flex-1 transition-all duration-500 ${menuAberto ? 'ml-64' : 'ml-20'} print:hidden`}>
         {loading ? <div className="flex items-center justify-center h-screen"><Activity className="animate-spin text-blue-500" /></div> : (
           <div className="h-screen overflow-y-auto scrollbar-hide">
             {abaAtiva === 'kanban' && (
               <Kanban 
                 requisicoes={requisicoes} 
                 onUpdate={async (id: number, dados: Record<string, unknown>) => { await supabase.from('Requisicao').update(dados).eq('id', id); }}
-                onPrint={dispararImpressao} // PASSA A FUNÇÃO PARA O KANBAN
+                onPrint={dispararImpressao}
+                idDestaque={idDestaque}
               />
             )}
             {abaAtiva === 'usuarios' && (
