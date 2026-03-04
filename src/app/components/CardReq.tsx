@@ -12,6 +12,8 @@ import {
   Plus, CheckCheck, BadgeCheck 
 } from 'lucide-react';
 
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxaRTVU7_S7JsvSi3v9uY1o4Bx5nTdO0VOfEejARuaOOFrtwlg1Cmb9AFDL0QCphzk/exec';
+
 const DEPARTAMENTOS = ["Trator-Loja", "Trator-Cliente", "Oficina", "Comercial"];
 const TIPOS_REQ = ["Peça", "Alimentação", "Ferramenta", "Serviço de Terceiros", "Almoxarifado", "Frota-Veículos", "Insumo Infra"];
 const USUARIOS = ["Danilo de Souza", "Fernando Leonel", "Gabriel Moraes", "Henri Hione", "Jose Ortiz", "Luiz Fernando (Motorista)", "Nicolas Dario", "Paulo Motta", "Jose Antonio de Oliveira", "Pós Vendas- Escritório"];
@@ -184,15 +186,25 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
   const getUrlAnexo = (caminho: string) => {
     if (!caminho) return null;
     if (caminho.startsWith('http')) return caminho;
+    if (caminho.startsWith('SupaAtualizarReq_Images/')) return null;
 
-    // Registros antigos do AppSheet (path sem URL) → abre a pasta do Drive
-    if (caminho.startsWith('SupaAtualizarReq_Images/')) {
-      return `https://drive.google.com/drive/folders/1Og75XqgctZLJ5bGqO78b68ZKUCw88l4a`;
-    }
-
-    // Arquivos do sistema web → bucket do Supabase
     const { data } = supabase.storage.from('requisicoes').getPublicUrl(caminho);
     return data.publicUrl;
+  };
+
+  const abrirArquivoDrive = async (caminho: string) => {
+    const nomeArquivo = caminho.replace('SupaAtualizarReq_Images/', '');
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?name=${encodeURIComponent(nomeArquivo)}`);
+      const data = await res.json();
+      if (data.url) {
+        window.open(data.url, '_blank');
+      } else {
+        alert('Arquivo não encontrado no Google Drive');
+      }
+    } catch {
+      alert('Erro ao buscar arquivo no Google Drive');
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
@@ -418,15 +430,25 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                             {req[item.field] ? <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div> : <ArrowRight size={14} className="text-slate-200"/>}
                           </label>
                           {req[item.field] && (
-                            <a 
-                              href={fileUrl || '#'} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className={`w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg ${isDriveFile ? 'bg-green-600 hover:bg-green-700 shadow-green-900/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-900/20'}`} 
-                              title={isDriveFile ? 'Abrir no Google Drive' : 'Visualizar Arquivo'}
-                            >
-                              {isDriveFile ? <ExternalLink size={18} /> : <Eye size={18} />}
-                            </a>
+                            isDriveFile ? (
+                              <button
+                                onClick={() => abrirArquivoDrive(req[item.field])}
+                                className="w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg bg-green-600 hover:bg-green-700 shadow-green-900/20 cursor-pointer"
+                                title="Abrir no Google Drive"
+                              >
+                                <ExternalLink size={18} />
+                              </button>
+                            ) : (
+                              <a
+                                href={fileUrl || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg bg-blue-600 hover:bg-blue-700 shadow-blue-900/20"
+                                title="Visualizar Arquivo"
+                              >
+                                <Eye size={18} />
+                              </a>
+                            )
                           )}
                         </div>
                       );
