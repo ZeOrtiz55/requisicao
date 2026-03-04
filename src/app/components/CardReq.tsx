@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase'; 
-import TemplatePDF from './TemplatePDF'; // Certifique-se de que este arquivo existe
+import TemplatePDF from './TemplatePDF';
 import { 
   FileText, Calendar, Layers, UserCircle, Briefcase, 
   Truck, HardHat, DollarSign, Tag, ClipboardList, 
@@ -13,8 +13,7 @@ import {
 } from 'lucide-react';
 
 const DEPARTAMENTOS = ["Trator-Loja", "Trator-Cliente", "Oficina", "Comercial"];
-const TIPOS_REQ = ["Peça", "Alimentação", "Ferramenta", "Serviço de Terceiros", "Almoxarifado", "Frota-Veículos"];
-const FORNECEDORES = ["Rodrigo Torneiro (Panda)"]; 
+const TIPOS_REQ = ["Peça", "Alimentação", "Ferramenta", "Serviço de Terceiros", "Almoxarifado", "Frota-Veículos", "Insumo Infra"];
 const USUARIOS = ["Danilo de Souza", "Fernando Leonel", "Gabriel Moraes", "Henri Hione", "Jose Ortiz", "Luiz Fernando (Motorista)", "Nicolas Dario", "Paulo Motta", "Jose Antonio de Oliveira", "Pós Vendas- Escritório"];
 
 export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate: any, onPrint: any }) {
@@ -25,12 +24,23 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
   const [fornecedoresVisiveis, setFornecedoresVisiveis] = useState(1);
   const [userEmail, setUserEmail] = useState('Buscando...');
   
+  const [fornecedoresBanco, setFornecedoresBanco] = useState<any[]>([]);
+
   const [nomeExibicao, setNomeExibicao] = useState(req.solicitante);
   const [veiculoExibicao, setVeiculoExibicao] = useState(req.veiculo);
 
   const veioDoApp = req.obs?.includes('[APPSHEET_ID:');
 
-  // 1. LÓGICA PARA CONVERTER EMAIL EM NOME BUSCANDO NA TABELA DE USUÁRIOS
+  // 1. BUSCA FORNECEDORES NA TABELA DO SUPABASE PARA O DROPDOWN
+  useEffect(() => {
+    const fetchFornecedores = async () => {
+      const { data } = await supabase.from('Fornecedores').select('nome').order('nome');
+      if (data) setFornecedoresBanco(data);
+    };
+    fetchFornecedores();
+  }, []);
+
+  // 2. LÓGICA PARA CONVERTER EMAIL EM NOME BUSCANDO NA TABELA DE USUÁRIOS
   useEffect(() => {
     const traduzirEmailParaNome = async () => {
       if (req.solicitante && req.solicitante.includes('@')) {
@@ -50,7 +60,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     traduzirEmailParaNome();
   }, [req.solicitante]);
 
-  // 2. LÓGICA PARA CONVERTER CÓDIGO DO VEÍCULO EM PLACA (TABELA SupaPlacas)
+  // 3. LÓGICA PARA CONVERTER CÓDIGO DO VEÍCULO EM PLACA (TABELA SupaPlacas)
   useEffect(() => {
     const traduzirCodigoVeiculo = async () => {
       if (req.veiculo && !isNaN(req.veiculo) && String(req.veiculo).length < 5) {
@@ -70,7 +80,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     traduzirCodigoVeiculo();
   }, [req.veiculo]);
 
-  // CAPTURA AUTOMÁTICA DO EMAIL DO USUÁRIO LOGADO
+  // 4. CAPTURA AUTOMÁTICA DO EMAIL DO USUÁRIO LOGADO
   useEffect(() => {
     let isMounted = true;
     const getUser = async () => {
@@ -95,7 +105,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     return () => { isMounted = false; };
   }, []);
 
-  // Sincroniza localData quando req ou traduções mudam
+  // 5. Sincroniza localData quando req ou traduções mudam
   useEffect(() => {
     setLocalData({
       ...req,
@@ -105,7 +115,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     });
   }, [req, nomeExibicao, veiculoExibicao]);
 
-  // Canal realtime para cotação
+  // 6. Canal realtime para cotação
   useEffect(() => {
     const buscarEAssinarCotacao = async () => {
       const { data } = await supabase.from('req_cotacao').select('*').eq('id', req.id).single();
@@ -131,7 +141,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     return () => { supabase.removeChannel(channel); };
   }, [req.id]);
 
-  // DATA AUTOMÁTICA PARA O FINANCEIRO
+  // 7. DATA AUTOMÁTICA PARA O FINANCEIRO
   useEffect(() => {
     if (req.status === 'financeiro' && !req.enviado_financeiro_data) {
       const hoje = new Date().toISOString().split('T')[0];
@@ -174,6 +184,13 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
   const getUrlAnexo = (caminho: string) => {
     if (!caminho) return null;
     if (caminho.startsWith('http')) return caminho;
+
+    // Registros antigos do AppSheet (path sem URL) → abre a pasta do Drive
+    if (caminho.startsWith('SupaAtualizarReq_Images/')) {
+      return `https://drive.google.com/drive/folders/1Og75XqgctZLJ5bGqO78b68ZKUCw88l4a`;
+    }
+
+    // Arquivos do sistema web → bucket do Supabase
     const { data } = supabase.storage.from('requisicoes').getPublicUrl(caminho);
     return data.publicUrl;
   };
@@ -210,7 +227,6 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
   const inputStyle = "w-full text-base font-light text-slate-900 outline-none border-b border-slate-100 focus:border-blue-500 pb-2 bg-transparent transition-all cursor-pointer";
 
   return (
-    // BLOQUEIO DE TROCA DE FASE: draggable fica falso se o modal estiver aberto
     <div className="font-montserrat" draggable={!modalAberto && !modalCotacaoAberto} onDragStart={(e) => e.dataTransfer.setData("idRequisicao", req.id.toString())}>
       
       {/* CAPA DO CARD NO KANBAN */}
@@ -225,7 +241,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
         )}
 
         {/* AVISO DE COTAÇÃO INCLUÍDA */}
-        {cotacaoData.fornecedor1 && (
+        {cotacaoData && cotacaoData.fornecedor1 && (
           <div className="absolute top-0 left-[110px] bg-green-600 text-white text-[8px] font-black px-3 py-1 rounded-b-xl flex items-center gap-1 uppercase tracking-tighter z-10 animate-pulse">
             <BadgeCheck size={10} /> Cotação OK
           </div>
@@ -372,7 +388,13 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
 
                 <div className={bentoStyle}>
                   <div className="space-y-8">
-                    <div><label className={labelStyle}><Store size={14}/> Fornecedor Vinculado</label><select value={req.fornecedor || ''} onChange={e => persist('fornecedor', e.target.value)} className={inputStyle}><option value="">Selecionar da lista...</option>{FORNECEDORES.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
+                    <div>
+                      <label className={labelStyle}><Store size={14}/> Fornecedor Vinculado</label>
+                      <select value={req.fornecedor || ''} onChange={e => persist('fornecedor', e.target.value)} className={inputStyle}>
+                        <option value="">Selecionar da lista...</option>
+                        {fornecedoresBanco.map(f => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
+                      </select>
+                    </div>
                     <div><label className={labelStyle}><Receipt size={14}/> Nota Fiscal</label><input value={localData.numero_nota || ''} onChange={(e) => setLocalData({...localData, numero_nota: e.target.value})} onBlur={(e) => persist('numero_nota', e.target.value)} className={inputStyle} placeholder="Nº Documento" /></div>
                     <div className="bg-red-50 border border-red-100 p-8 rounded-[2.5rem] shadow-sm"><label className="text-[10px] font-bold text-red-500 uppercase tracking-[0.3em] block mb-4">Custo Real Despesa</label><div className="flex items-baseline gap-2"><span className="text-red-500 text-xl font-bold uppercase">R$</span><input value={localData.valor_despeza || ''} onChange={e => setLocalData({...localData, valor_despeza: e.target.value})} onBlur={e => persist('valor_despeza', e.target.value)} className="w-full text-5xl font-black text-red-600 bg-transparent outline-none tracking-tighter" placeholder="0,00" /></div></div>
                   </div>
@@ -381,11 +403,39 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                 <div className={bentoStyle}>
                   <label className={labelStyle}><FileText size={14}/> Descrição Detalhada</label>
                   <textarea value={localData.obs || ""} onChange={e => setLocalData({...localData, obs: e.target.value})} onBlur={e => persist('obs', e.target.value)} className="w-full text-base font-light outline-none h-40 resize-none italic text-slate-500 bg-transparent pt-2 border-b border-slate-100 mb-8" />
+                  
+                  {/* Bloco de Documentação Anexada */}
+                  <label className={labelStyle}><Paperclip size={14}/> Documentação anexada</label>
+                  <div className="space-y-4 mt-6">
+                    {[{ label: 'Nota Fiscal', field: 'foto_nf', icon: <Camera size={16}/> }, { label: 'Boleto', field: 'boleto_fornecedor', icon: <Receipt size={16}/> }, { label: 'Recibo / Outros', field: 'recibo_fornecedor', icon: <Paperclip size={16}/> }].map((item) => {
+                      const fileUrl = getUrlAnexo(req[item.field]);
+                      const isDriveFile = req[item.field]?.startsWith('SupaAtualizarReq_Images/');
+                      return (
+                        <div key={item.field} className="flex items-center gap-2">
+                          <label className="flex-1 flex items-center justify-between p-6 rounded-2xl bg-slate-50 hover:bg-white border border-slate-200 cursor-pointer transition-all group shadow-sm">
+                            <div className="flex items-center gap-4"><div className="text-slate-400 group-hover:text-blue-500">{item.icon}</div><span className="text-[11px] font-bold text-slate-600 uppercase tracking-tighter">{item.label}</span></div>
+                            <input type="file" className="hidden" onChange={e => handleFileUpload(e, item.field)} />
+                            {req[item.field] ? <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div> : <ArrowRight size={14} className="text-slate-200"/>}
+                          </label>
+                          {req[item.field] && (
+                            <a 
+                              href={fileUrl || '#'} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className={`w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg ${isDriveFile ? 'bg-green-600 hover:bg-green-700 shadow-green-900/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-900/20'}`} 
+                              title={isDriveFile ? 'Abrir no Google Drive' : 'Visualizar Arquivo'}
+                            >
+                              {isDriveFile ? <ExternalLink size={18} /> : <Eye size={18} />}
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
               <div className="flex flex-col items-center gap-8 pt-12 border-t border-slate-400/20">
-                {/* REMOVIDO: Bloco "Impresso por" visualmente removido do modal */}
                 <div className="flex flex-col md:flex-row gap-4 w-full max-w-2xl">
                     <button onClick={() => setModalCotacaoAberto(true)} className="flex-1 bg-blue-600 text-white px-8 py-6 rounded-full font-bold uppercase text-[12px] tracking-[0.2em] hover:bg-blue-700 hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 shadow-xl"><ClipboardList size={20} /> Mapa de Cotação</button>
                     <button onClick={handlePrint} className="flex-1 bg-slate-900 text-white px-8 py-6 rounded-full font-bold uppercase text-[12px] tracking-[0.2em] hover:bg-blue-600 hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 shadow-xl"><Printer size={20} /> Gerar PDF Requisição</button>

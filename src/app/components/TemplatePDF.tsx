@@ -32,11 +32,9 @@ export default function TemplatePDF({ req }: { req: any, onUpdate?: any, onPrint
   const [placaVeiculo, setPlacaVeiculo] = useState(req?.veiculo || '---');
   const [cotacaoData, setCotacaoData] = useState<any>(null);
 
-  // IDs para dependências estáveis
   const reqId = req?.id;
   const codigoRef = req?.codigo_ref;
 
-  // 1. BUSCA NOME DO SOLICITANTE
   useEffect(() => {
     const buscarNome = async () => {
       if (req?.solicitante && req.solicitante.includes('@')) {
@@ -53,7 +51,6 @@ export default function TemplatePDF({ req }: { req: any, onUpdate?: any, onPrint
     buscarNome();
   }, [req?.solicitante]);
 
-  // 2. BUSCA PLACA DO VEÍCULO
   useEffect(() => {
     const buscarPlaca = async () => {
       if (req?.veiculo && !isNaN(req.veiculo) && String(req.veiculo).length < 5) {
@@ -70,7 +67,6 @@ export default function TemplatePDF({ req }: { req: any, onUpdate?: any, onPrint
     buscarPlaca();
   }, [req?.veiculo]);
 
-  // 3. BUSCA COTAÇÃO (Correção do erro de render e busca por ID)
   useEffect(() => {
     const buscarCotacao = async () => {
       if (reqId && reqId !== 'NOVA') {
@@ -88,9 +84,9 @@ export default function TemplatePDF({ req }: { req: any, onUpdate?: any, onPrint
   if (!req) return null;
 
   const unidade = (req.tipo === 'Frota-Veículos' || req.setor?.includes('Fartura')) ? UNIDADES.castro : UNIDADES.nova;
-  const fornecedor = FORNECEDORES_CADASTRADOS[req.fornecedor] || null;
   const dataFormatada = req.data ? new Date(req.data).toLocaleDateString('pt-BR') : '___/___/_____';
   const dataCriacao = req.created_at ? new Date(req.created_at).toLocaleString('pt-BR') : '---';
+  const dataFinanceiro = req.enviado_financeiro_data ? new Date(req.enviado_financeiro_data).toLocaleDateString('pt-BR') : '---';
   const cleanObs = req.obs ? req.obs.replace(/\[APPSHEET_ID:.*?\]/g, '').trim() : '';
 
   return (
@@ -107,82 +103,82 @@ export default function TemplatePDF({ req }: { req: any, onUpdate?: any, onPrint
         }
       `}} />
 
-      <div className="pdf-content flex flex-col font-sans bg-white text-black">
+      <div className="pdf-content flex flex-col font-sans bg-white text-black p-4">
         {/* CABEÇALHO */}
-        <div className="flex justify-between items-start mb-4 border-b-2 border-black pb-2">
-          <div className="space-y-0.5">
-            <h2 className="text-base font-bold tracking-tighter leading-none">{unidade.nome}</h2>
-            <div className="text-[8px] uppercase tracking-tight leading-tight">
+        <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold tracking-tighter leading-none">{unidade.nome}</h2>
+            <div className="text-[11px] uppercase tracking-tight leading-tight">
               <p>{unidade.cnpj} • {unidade.ie}</p>
-              <p>{unidade.endereco} • {unidade.cidade}</p>
-              <p className="font-bold">{unidade.contato}</p>
+              <p>{unidade.endereco}</p>
+              <p>{unidade.cidade}</p>
+              <p className="font-bold text-[12px] mt-1">{unidade.contato}</p>
             </div>
           </div>
           <div className="text-right">
-            <div className="border-2 border-black px-3 py-1 rounded-lg inline-block bg-white">
-              <span className="text-[7px] block uppercase font-bold">ID REQ.</span>
-              <span className="text-2xl font-black leading-none">{req.id || 'NOVA'}</span>
+            <div className="border-4 border-black px-6 py-3 rounded-2xl inline-block bg-white shadow-sm">
+              <span className="text-[10px] block uppercase font-black">ID REQUISIÇÃO</span>
+              <span className="text-4xl font-black leading-none">{req.id || 'NOVA'}</span>
             </div>
           </div>
         </div>
 
         {/* TÍTULO */}
-        <div className="mb-2 flex justify-between items-end border-b border-slate-300 pb-0.5">
-          <h1 className="text-lg font-black uppercase tracking-tight">Requisição de Suprimentos</h1>
-          <div className="text-[8px] font-black uppercase border border-black px-2 py-0.5 rounded bg-white">
+        <div className="mb-4 flex justify-between items-end border-b-2 border-slate-300 pb-1">
+          <h1 className="text-2xl font-black uppercase tracking-tight">Requisição Materiais e Serviços</h1>
+          <div className="text-[12px] font-black uppercase border-2 border-black px-4 py-1 rounded-lg bg-white">
             CATEGORIA: {req.tipo || 'Peça'}
           </div>
         </div>
 
         {/* GRADE DE INFORMAÇÕES */}
-        <div className="grid grid-cols-3 gap-0 border-2 border-black rounded-lg overflow-hidden mb-2">
-          <div className="p-1.5 border-r-2 border-black">
-            <label className="text-[6px] font-black text-slate-500 uppercase block">Solicitante</label>
-            <span className="text-[10px] font-bold uppercase">{nomeSolicitante}</span>
+        <div className="grid grid-cols-3 gap-0 border-2 border-black rounded-2xl overflow-hidden mb-4 shadow-sm">
+          <div className="p-3 border-r-2 border-black">
+            <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Solicitante Responsável</label>
+            <span className="text-[14px] font-bold uppercase">{nomeSolicitante}</span>
           </div>
-          <div className="p-1.5 border-r-2 border-black">
-            <label className="text-[6px] font-black text-slate-500 uppercase block">Unidade</label>
-            <span className="text-[10px] font-bold uppercase">{req.setor || '---'}</span>
+          <div className="p-3 border-r-2 border-black">
+            <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Unidade / Departamento</label>
+            <span className="text-[14px] font-bold uppercase">{req.setor || '---'}</span>
           </div>
-          <div className="p-1.5">
-            <label className="text-[6px] font-black text-slate-500 uppercase block">Data Solicitação</label>
-            <span className="text-[10px] font-bold uppercase">{dataFormatada}</span>
+          <div className="p-3">
+            <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Data da Solicitação</label>
+            <span className="text-[14px] font-bold uppercase">{dataFormatada}</span>
           </div>
         </div>
 
         {/* BLOCO TÉCNICO CONDICIONAL */}
         {(req.tipo === 'Frota-Veículos' || req.setor === 'Trator-Cliente' || req.tipo === 'Ferramenta') && (
-          <div className="border-2 border-black rounded-lg overflow-hidden mb-2">
+          <div className="border-2 border-black rounded-2xl overflow-hidden mb-4 shadow-sm">
             <div className="grid grid-cols-4 divide-x-2 divide-black uppercase">
                 {req.tipo === 'Frota-Veículos' ? (
                   <>
-                    <div className="p-1.5 col-span-2">
-                      <label className="text-[6px] font-black block">Equipamento / Veículo</label>
-                      <span className="text-[10px] font-bold">{placaVeiculo}</span>
+                    <div className="p-3 col-span-2">
+                      <label className="text-[10px] font-black block mb-1">Equipamento / Veículo (Placa)</label>
+                      <span className="text-[14px] font-bold">{placaVeiculo}</span>
                     </div>
-                    <div className="p-1.5">
-                      <label className="text-[6px] font-black block">KM / Horas</label>
-                      <span className="text-[10px] font-bold">{req.hodometro || '---'}</span>
+                    <div className="p-3">
+                      <label className="text-[10px] font-black block mb-1">KM / Horas</label>
+                      <span className="text-[14px] font-bold">{req.hodometro || '---'}</span>
                     </div>
                   </>
                 ) : (
-                  <div className="p-1.5 col-span-3">
-                    <label className="text-[6px] font-black block">Referência / Justificativa Técnica</label>
-                    <span className="text-[10px] font-bold">{req.Chassis_Modelo || '---'}</span>
+                  <div className="p-3 col-span-3">
+                    <label className="text-[10px] font-black block mb-1">Referência Técnica / Modelo</label>
+                    <span className="text-[14px] font-bold">{req.Chassis_Modelo || '---'}</span>
                   </div>
                 )}
-                
-                <div className="p-1.5">
+                <div className="p-3">
                   {req.setor === 'Trator-Cliente' && (
                     <>
-                      <label className="text-[6px] font-black block">OS</label>
-                      <span className="text-[10px] font-bold">{req.ordem_servico || '---'}</span>
+                      <label className="text-[10px] font-black block mb-1">Ordem Serv.</label>
+                      <span className="text-[14px] font-bold">{req.ordem_servico || '---'}</span>
                     </>
                   )}
                   {req.tipo === 'Ferramenta' && (
                     <>
-                      <label className="text-[6px] font-black block">Destinação</label>
-                      <span className="text-[10px] font-bold">{req.quem_ferramenta || req.ferramenta_quem || '---'}</span>
+                      <label className="text-[10px] font-black block mb-1">Destinação</label>
+                      <span className="text-[14px] font-bold">{req.quem_ferramenta || req.ferramenta_quem || '---'}</span>
                     </>
                   )}
                 </div>
@@ -192,22 +188,22 @@ export default function TemplatePDF({ req }: { req: any, onUpdate?: any, onPrint
 
         {/* BLOCO DE COTAÇÕES */}
         {cotacaoData && cotacaoData.fornecedor1 && (
-          <div className="border-2 border-black rounded-lg overflow-hidden mb-2">
-            <div className="bg-slate-100 text-[7px] font-black uppercase px-2 py-0.5 border-b border-black">Mapa de Cotações Vinculado</div>
+          <div className="border-2 border-black rounded-2xl overflow-hidden mb-4 shadow-sm">
+            <div className="bg-slate-100 text-[11px] font-black uppercase py-2 border-b-2 border-black text-center">Mapa de Cotações Vinculado</div>
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-black text-[6px] font-black uppercase bg-slate-50">
-                  <th className="p-1 border-r border-black w-1/3">Fornecedor</th>
-                  <th className="p-1 border-r border-black w-1/3">Material/Serviço</th>
-                  <th className="p-1 text-right">Valor Ofertado</th>
+                <tr className="border-b-2 border-black text-[10px] font-black uppercase bg-slate-50">
+                  <th className="p-2 border-r-2 border-black w-1/3">Fornecedor</th>
+                  <th className="p-2 border-r-2 border-black w-1/3">Material/Serviço</th>
+                  <th className="p-2 text-right">Valor Ofertado</th>
                 </tr>
               </thead>
-              <tbody className="text-[9px]">
+              <tbody className="text-[13px]">
                 {[1, 2, 3, 4, 5].map(i => cotacaoData[`fornecedor${i}`] ? (
                   <tr key={i} className="border-b border-slate-200 last:border-0">
-                    <td className="p-1 border-r border-black uppercase">{cotacaoData[`fornecedor${i}`]}</td>
-                    <td className="p-1 border-r border-black uppercase">{cotacaoData[`servico_material${i}`]}</td>
-                    <td className="p-1 text-right font-bold">R$ {cotacaoData[`valor${i}`]}</td>
+                    <td className="p-2 border-r-2 border-black uppercase">{cotacaoData[`fornecedor${i}`]}</td>
+                    <td className="p-2 border-r-2 border-black uppercase">{cotacaoData[`servico_material${i}`]}</td>
+                    <td className="p-2 text-right font-bold">R$ {cotacaoData[`valor${i}`]}</td>
                   </tr>
                 ) : null)}
               </tbody>
@@ -216,53 +212,70 @@ export default function TemplatePDF({ req }: { req: any, onUpdate?: any, onPrint
         )}
 
         {/* MEMORIAL DESCRIÇÃO */}
-        <div className="border-2 border-black rounded-lg p-3 mb-2 bg-white flex-1 min-h-[4cm]">
-          <label className="text-[7px] font-black text-black uppercase block mb-1 border-b border-slate-300">Memorial Descritivo / Justificativa</label>
-          <div className="text-[11px] leading-tight text-black">
-            <h4 className="font-bold mb-1 uppercase">{req.titulo}</h4>
-            <div className="whitespace-pre-wrap font-medium">
-              {cleanObs || '---'}
+        <div className="border-2 border-black rounded-2xl p-5 mb-4 bg-white flex-1 min-h-[5cm] shadow-sm">
+          <label className="text-[11px] font-black text-black uppercase block mb-2 border-b-2 border-slate-300 pb-1">Memorial Descritivo / Justificativa Técnica</label>
+          <div className="text-[14px] leading-relaxed text-black">
+            <h4 className="font-bold mb-3 uppercase text-[16px] text-slate-900">{req.titulo}</h4>
+            <div className="whitespace-pre-wrap font-medium text-slate-800">
+              {cleanObs || 'Descrição detalhada não fornecida.'}
               {(req.Motivo || req.ReqMotivo) && (
-                <div className="mt-4 pt-1 border-t border-dashed border-slate-300">
-                  <span className="text-[7px] font-black uppercase block text-slate-500">Justificativa:</span>
-                  <p className="italic text-slate-700 text-[10px]">{req.Motivo || req.ReqMotivo}</p>
+                <div className="mt-6 pt-3 border-t-2 border-dashed border-slate-300">
+                  <span className="text-[11px] font-black uppercase block text-slate-500 mb-1">Justificativa:</span>
+                  <p className="italic text-slate-700 text-[13px]">{req.Motivo || req.ReqMotivo}</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* RODAPÉ FINANCEIRO (BRANCO) */}
-        <div className="grid grid-cols-12 gap-2 items-stretch mb-2">
-          <div className="col-span-8 border-2 border-black rounded-lg p-2 h-full bg-white">
-            <label className="text-[6px] font-black text-slate-500 uppercase block">Fornecedor Vinculado</label>
-            <p className="text-[10px] font-bold uppercase">{req.fornecedor || 'NÃO DEFINIDO'}</p>
-            <p className="font-bold mt-0.5 text-[8px]">DOC FISCAL: {req.numero_nota || 'PENDENTE'}</p>
+        {/* FINANCEIRO */}
+        <div className="grid grid-cols-12 gap-3 items-stretch mb-4">
+          <div className="col-span-7 border-2 border-black rounded-2xl p-4 h-full bg-white shadow-sm">
+            <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Fornecedor / Origem Vinculada</label>
+            <p className="text-[14px] font-bold uppercase text-black">{req.fornecedor || 'NÃO DEFINIDO'}</p>
+            <p className="font-black mt-2 text-[11px] border-t pt-1">DOC FISCAL (NF): {req.numero_nota || 'EM PROCESSAMENTO'}</p>
           </div>
-          <div className="col-span-4 border-2 border-black rounded-lg p-2 h-full flex flex-col justify-center items-center bg-white">
-            <label className="text-[7px] font-bold text-slate-400 uppercase block leading-none">Total Geral</label>
-            <div className="text-2xl font-normal tracking-tighter">
-              <span className="text-[10px] mr-0.5 opacity-50">R$</span>{req.valor_despeza || '0,00'}
+          <div className="col-span-5 border-2 border-black rounded-2xl p-4 h-full flex flex-col justify-center items-center bg-white shadow-sm">
+            <label className="text-[11px] font-bold text-slate-400 uppercase block leading-none mb-1">Valor Total Geral</label>
+            <div className="text-4xl font-black tracking-tighter">
+              <span className="text-[14px] mr-1 opacity-50 font-bold">R$</span>{req.valor_despeza || '0,00'}
             </div>
           </div>
         </div>
 
-        {/* BLOCO DE DATAS FINAL */}
-        <div className="grid grid-cols-2 gap-4 mb-1">
-          <div className="border border-slate-300 rounded-md p-1 px-2 flex justify-between items-center bg-white">
-            <span className="text-[6px] font-black text-slate-400 uppercase">Criação</span>
-            <span className="text-[8px] font-bold text-slate-600">{dataCriacao}</span>
+        {/* DATAS E ASSINATURA */}
+        <div className="grid grid-cols-3 gap-4 mb-2">
+          <div className="border border-slate-300 rounded-xl p-2 px-4 flex flex-col justify-center bg-white">
+            <span className="text-[9px] font-black text-slate-400 uppercase">Data de Criação</span>
+            <span className="text-[12px] font-bold text-slate-700">{dataCriacao}</span>
           </div>
-          <div className="border border-slate-300 rounded-md p-1 px-2 flex justify-between items-center bg-white">
-            <span className="text-[6px] font-black text-slate-400 uppercase">Impressão</span>
-            <span className="text-[8px] font-bold text-slate-600">{new Date().toLocaleString('pt-BR')}</span>
+          
+          {/* DATA FINANCEIRO CONDICIONAL */}
+          <div className={`border rounded-xl p-2 px-4 flex flex-col justify-center ${req.status === 'financeiro' ? 'border-black bg-slate-50' : 'border-slate-300 opacity-30'}`}>
+            <span className="text-[9px] font-black text-slate-400 uppercase">Envio Financeiro</span>
+            <span className="text-[12px] font-bold text-black">{req.status === 'financeiro' ? dataFinanceiro : 'PENDENTE'}</span>
+          </div>
+
+          <div className="border border-slate-300 rounded-xl p-2 px-4 flex flex-col justify-center bg-white">
+            <span className="text-[9px] font-black text-slate-400 uppercase">Data Impressão</span>
+            <span className="text-[12px] font-bold text-slate-700">{new Date().toLocaleString('pt-BR')}</span>
           </div>
         </div>
 
+        {/* ASSINATURA RESPONSÁVEL FINANCEIRO */}
+        {req.status === 'financeiro' && (
+          <div className="mt-8 border-t-2 border-black pt-4 text-center animate-in fade-in duration-1000">
+            <div className="w-80 mx-auto border-t border-black pt-1 mt-12">
+              <p className="text-[12px] font-black uppercase tracking-widest text-black">Assinatura Responsável</p>
+              <p className="text-[10px] text-slate-500 uppercase font-bold">Documento Validado e Conferido para Pagamento</p>
+            </div>
+          </div>
+        )}
+
         {/* RODAPÉ DO SISTEMA */}
-        <div className="pt-1 flex justify-between items-center text-[5px] text-slate-400 uppercase font-black border-t border-slate-100">
-          <span>Nova Tratores • Gestão de Requisições</span>
-          <span>Cód. Verificação: {req.id?.toString().padStart(8, '0')}</span>
+        <div className="mt-auto pt-2 flex justify-between items-center text-[9px] text-slate-400 uppercase font-black border-t-2 border-slate-100">
+          <span>Nova Tratores • Gestão de Requisições v3.6</span>
+          <span className="tracking-widest">Cód: {req.id?.toString().padStart(8, '0')}</span>
         </div>
       </div>
     </div>
