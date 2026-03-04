@@ -57,7 +57,7 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
               <label className={labelStyle}>Tipo</label>
               <select required onChange={e => setFormData({...formData, tipo: e.target.value})} className={inputStyle}>
                 <option value="" className="bg-slate-900">Selecione...</option>
-                {["Peças", "Trator-Loja", "Trator-Cliente", "Frota-Veiculos", "Serviço de Terceiros", "Almoxarifado", "Ferramenta"].map(t => <option key={t} value={t} className="bg-slate-900">{t}</option>)}
+                {["Peças", "Alimentação", "Trator-Loja", "Trator-Cliente", "Frota-Veiculos", "Serviço de Terceiros", "Almoxarifado", "Ferramenta"].map(t => <option key={t} value={t} className="bg-slate-900">{t}</option>)}
               </select>
             </div>
             <div>
