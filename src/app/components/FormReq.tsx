@@ -71,7 +71,7 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
               <label className={labelStyle}>Setor Destino</label>
               <select required onChange={e => setFormData({...formData, setor: e.target.value})} className={inputStyle}>
                 <option value="" className="bg-slate-900">Selecione...</option>
-                {["Comercial", "Oficina", "Cobrado Cliente", "Administrativo"].map(s => <option key={s} value={s} className="bg-slate-900">{s}</option>)}
+                {["Trator-Loja", "Trator-Cliente", "Oficina", "Comercial"].map(s => <option key={s} value={s} className="bg-slate-900">{s}</option>)}
               </select>
             </div>
           </div>

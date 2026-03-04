@@ -12,11 +12,10 @@ import {
   Plus, CheckCheck, BadgeCheck 
 } from 'lucide-react';
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxaRTVU7_S7JsvSi3v9uY1o4Bx5nTdO0VOfEejARuaOOFrtwlg1Cmb9AFDL0QCphzk/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyIatVqhjdeBeo4PYNWr992vCsPpvEEjOxabWB7mz5JRJ7BroxnvR8CRIcXIgTfLSm/exec';
 
 const DEPARTAMENTOS = ["Trator-Loja", "Trator-Cliente", "Oficina", "Comercial"];
 const TIPOS_REQ = ["Peça", "Alimentação", "Ferramenta", "Serviço de Terceiros", "Almoxarifado", "Frota-Veículos", "Insumo Infra"];
-const USUARIOS = ["Danilo de Souza", "Fernando Leonel", "Gabriel Moraes", "Henri Hione", "Jose Ortiz", "Luiz Fernando (Motorista)", "Nicolas Dario", "Paulo Motta", "Jose Antonio de Oliveira", "Pós Vendas- Escritório"];
 
 export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate: any, onPrint: any }) {
   const [modalAberto, setModalAberto] = useState(false);
@@ -27,19 +26,25 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
   const [userEmail, setUserEmail] = useState('Buscando...');
   
   const [fornecedoresBanco, setFornecedoresBanco] = useState<any[]>([]);
+  const [usuariosBanco, setUsuariosBanco] = useState<any[]>([]);
 
   const [nomeExibicao, setNomeExibicao] = useState(req.solicitante);
   const [veiculoExibicao, setVeiculoExibicao] = useState(req.veiculo);
 
   const veioDoApp = req.obs?.includes('[APPSHEET_ID:');
 
-  // 1. BUSCA FORNECEDORES NA TABELA DO SUPABASE PARA O DROPDOWN
+  // 1. BUSCA FORNECEDORES E USUÁRIOS NA TABELA DO SUPABASE PARA OS DROPDOWNS
   useEffect(() => {
-    const fetchFornecedores = async () => {
-      const { data } = await supabase.from('Fornecedores').select('nome').order('nome');
-      if (data) setFornecedoresBanco(data);
+    const fetchData = async () => {
+      // Busca Fornecedores
+      const { data: fornecedores } = await supabase.from('Fornecedores').select('nome').order('nome');
+      if (fornecedores) setFornecedoresBanco(fornecedores);
+
+      // Busca Usuários da tabela req_usuarios
+      const { data: usuarios } = await supabase.from('req_usuarios').select('nome').order('nome');
+      if (usuarios) setUsuariosBanco(usuarios);
     };
-    fetchFornecedores();
+    fetchData();
   }, []);
 
   // 2. LÓGICA PARA CONVERTER EMAIL EM NOME BUSCANDO NA TABELA DE USUÁRIOS
@@ -192,26 +197,58 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     return data.publicUrl;
   };
 
-  const abrirArquivoDrive = async (caminho: string) => {
+  const abrirArquivoDrive = (caminho: string) => {
     const nomeArquivo = caminho.replace('SupaAtualizarReq_Images/', '');
-    try {
-      const res = await fetch(`${APPS_SCRIPT_URL}?name=${encodeURIComponent(nomeArquivo)}`);
-      const data = await res.json();
-      if (data.url) {
-        window.open(data.url, '_blank');
+    const novaAba = window.open('about:blank', '_blank');
+    const callbackName = `_driveCb${Date.now()}`;
+
+    (window as any)[callbackName] = (data: any) => {
+      if (data.url && novaAba) {
+        novaAba.location.href = data.url;
       } else {
+        novaAba?.close();
         alert('Arquivo não encontrado no Google Drive');
       }
-    } catch {
+      delete (window as any)[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement('script');
+    script.src = `${APPS_SCRIPT_URL}?name=${encodeURIComponent(nomeArquivo)}&callback=${callbackName}`;
+    script.onerror = () => {
+      novaAba?.close();
       alert('Erro ao buscar arquivo no Google Drive');
-    }
+      delete (window as any)[callbackName];
+      script.remove();
+    };
+    document.body.appendChild(script);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
-    if (e.target.files?.[0]) {
-      const fileName = e.target.files[0].name;
-      persist(fieldName, fileName);
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Gera um nome único para evitar sobrescrever arquivos com o mesmo nome
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${req.id}-${fieldName}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload real para o Bucket 'requisicoes'
+      const { error: uploadError } = await supabase.storage
+        .from('requisicoes')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Persiste o caminho no banco de dados
+      persist(fieldName, filePath);
+      
       if (fieldName === 'foto_nf') persist('status', 'completa');
+      
+      alert('Arquivo enviado com sucesso!');
+    } catch (error: any) {
+      alert('Erro ao realizar upload: ' + error.message);
     }
   };
 
@@ -282,6 +319,12 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
               <UserCircle size={12} className="text-slate-500"/> Solicitante:
             </span>
             <span className="text-[11px] font-medium truncate max-w-[180px]">{nomeExibicao}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-normal uppercase tracking-widest flex items-center gap-2">
+              <Building2 size={12} className="text-slate-500"/> Setor:
+            </span>
+            <span className="text-[11px] font-medium truncate max-w-[180px]">{req.setor || req.ReqQuem || '---'}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-normal uppercase tracking-widest flex items-center gap-2">
@@ -380,11 +423,60 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                       <label className={labelStyle}><UserCircle size={14}/> Colaborador Solicitante</label>
                       <select value={req.solicitante || ""} onChange={e => persist('solicitante', e.target.value)} className={inputStyle}>
                         <option value="">Selecionar Usuário...</option>
-                        {USUARIOS.map(u => <option key={u} value={u}>{u}</option>)}
+                        {usuariosBanco.map(u => <option key={u.nome} value={u.nome}>{u.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelStyle}><Building2 size={14}/> Setor Destino</label>
+                      <select value={req.setor || req.ReqQuem || ""} onChange={e => persist('setor', e.target.value)} className={inputStyle}>
+                        <option value="">Selecionar Setor...</option>
+                        {DEPARTAMENTOS.map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
                   </div>
                 </div>
+
+                {/* REGRAS CONDICIONAIS DE SETOR: TRATOR-CLIENTE / TRATOR-LOJA */}
+                {localData.setor === "Trator-Cliente" && (
+                  <div className={`${bentoStyle} bg-amber-50/50 border-amber-200 animate-in slide-in-from-top-4`}>
+                    <div className="space-y-8 uppercase">
+                      <h4 className="text-[10px] font-black text-amber-600 tracking-[0.3em] mb-4">Informações do Cliente</h4>
+                      <div>
+                        <label className={labelStyle}><User size={14}/> Nome do Cliente</label>
+                        <input value={localData.cliente || ''} onChange={e => setLocalData({...localData, cliente: e.target.value})} onBlur={e => persist('cliente', e.target.value.toUpperCase())} className={inputStyle} />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                          <label className={labelStyle}><ClipboardList size={14}/> Ordem de Serviço</label>
+                          <input value={localData.ordem_servico || ''} onChange={e => setLocalData({...localData, ordem_servico: e.target.value})} onBlur={e => persist('ordem_servico', e.target.value.toUpperCase())} className={inputStyle} />
+                        </div>
+                        <div>
+                          <label className={labelStyle}><Cpu size={14}/> Modelo / Chassis</label>
+                          <input value={localData.Chassis_Modelo || ''} onChange={e => setLocalData({...localData, Chassis_Modelo: e.target.value})} onBlur={e => persist('Chassis_Modelo', e.target.value.toUpperCase())} className={inputStyle} />
+                        </div>
+                      </div>
+                      <div className="bg-amber-100/50 p-8 rounded-[2.5rem]">
+                        <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.3em] block mb-4">Valor Cobrado do Cliente</label>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-amber-700 text-xl font-bold">R$</span>
+                          <input value={localData.valor_cobrado_cliente || ''} onChange={e => setLocalData({...localData, valor_cobrado_cliente: e.target.value})} onBlur={e => persist('valor_cobrado_cliente', e.target.value)} className="w-full text-4xl font-black text-amber-800 bg-transparent outline-none tracking-tighter" placeholder="0,00" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {localData.setor === "Trator-Loja" && (
+                  <div className={`${bentoStyle} bg-slate-50/50 border-slate-200 animate-in slide-in-from-top-4`}>
+                    <div className="space-y-8 uppercase">
+                      <h4 className="text-[10px] font-black text-slate-600 tracking-[0.3em] mb-4">Informações do Trator (Loja)</h4>
+                      <div>
+                        <label className={labelStyle}><Cpu size={14}/> Modelo / Chassis do Trator</label>
+                        <input value={localData.Chassis_Modelo || ''} onChange={e => setLocalData({...localData, Chassis_Modelo: e.target.value})} onBlur={e => persist('Chassis_Modelo', e.target.value.toUpperCase())} className={inputStyle} />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {(req.tipo === 'Frota-Veículos' || req.ReqTipo === 'Frota-Veículos') && (
                   <div className={`${bentoStyle} bg-blue-50/50 border-blue-200 animate-in slide-in-from-top-4`}>
