@@ -27,6 +27,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
   
   const [fornecedoresBanco, setFornecedoresBanco] = useState<any[]>([]);
   const [usuariosBanco, setUsuariosBanco] = useState<any[]>([]);
+  const [veiculosBanco, setVeiculosBanco] = useState<any[]>([]);
 
   const [nomeExibicao, setNomeExibicao] = useState(req.solicitante);
   const [veiculoExibicao, setVeiculoExibicao] = useState(req.veiculo);
@@ -43,6 +44,10 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
       // Busca Usuários da tabela req_usuarios
       const { data: usuarios } = await supabase.from('req_usuarios').select('nome').order('nome');
       if (usuarios) setUsuariosBanco(usuarios);
+
+      // Busca Veículos da tabela SupaPlacas
+      const { data: veiculos } = await supabase.from('SupaPlacas').select('IdPlaca, NumPlaca').order('NumPlaca');
+      if (veiculos) setVeiculosBanco(veiculos);
     };
     fetchData();
   }, []);
@@ -271,9 +276,10 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     }
   };
 
-  const labelStyle = "text-[11px] font-bold text-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2";
-  const bentoStyle = "bg-white/90 backdrop-blur-sm border border-slate-300 rounded-[2.5rem] p-10 shadow-sm transition-all duration-300 w-full";
-  const inputStyle = "w-full text-base font-light text-slate-900 outline-none border-b border-slate-100 focus:border-blue-500 pb-2 bg-transparent transition-all cursor-pointer";
+  const labelStyle = "text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2";
+  const bentoStyle = "bg-white/[0.03] border border-white/8 rounded-2xl p-8 transition-all duration-300 w-full";
+  const inputStyle = "w-full text-base font-light text-white outline-none border-b border-white/10 focus:border-blue-500 pb-2 bg-transparent transition-all cursor-pointer placeholder:text-slate-600";
+  const selectStyle = `${inputStyle} [&>option]:text-black [&>option]:bg-white`;
 
   return (
     <div className="font-montserrat" draggable={!modalAberto && !modalCotacaoAberto} onDragStart={(e) => e.dataTransfer.setData("idRequisicao", req.id.toString())}>
@@ -322,16 +328,24 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-normal uppercase tracking-widest flex items-center gap-2">
+              <Calendar size={12} className="text-slate-500"/> Data:
+            </span>
+            <span className="text-[11px] font-medium">{req.data ? new Date(req.data + 'T12:00:00').toLocaleDateString('pt-BR') : '---'}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-normal uppercase tracking-widest flex items-center gap-2">
               <Building2 size={12} className="text-slate-500"/> Setor:
             </span>
             <span className="text-[11px] font-medium truncate max-w-[180px]">{req.setor || req.ReqQuem || '---'}</span>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-normal uppercase tracking-widest flex items-center gap-2">
-              <Car size={12} className="text-slate-500"/> Veículo:
-            </span>
-            <span className="text-[11px] font-medium truncate max-w-[180px]">{veiculoExibicao || '---'}</span>
-          </div>
+          {(req.tipo === 'Ferramenta' || req.ReqTipo === 'Ferramenta') && (
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-normal uppercase tracking-widest flex items-center gap-2">
+                <Tag size={12} className="text-slate-500"/> Destinação:
+              </span>
+              <span className="text-[11px] font-medium truncate max-w-[180px]">{req.quem_ferramenta || req.ferramenta_quem || '---'}</span>
+            </div>
+          )}
         </div>
 
         <div className="mt-5 flex justify-start items-center gap-3">
@@ -343,16 +357,16 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
       {/* MODAL COTAÇÃO */}
       {modalCotacaoAberto && (
         <div className="fixed inset-0 bg-blue-900/40 backdrop-blur-xl z-[60] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200">
-          <div className="bg-slate-300 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[3rem] shadow-2xl border border-white flex flex-col">
-            <div className="sticky top-0 bg-slate-300/90 backdrop-blur-md px-10 py-8 border-b border-slate-400/30 flex justify-between items-center z-10">
+          <div className="bg-slate-950 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl border border-white/10 flex flex-col">
+            <div className="sticky top-0 bg-slate-800/95 backdrop-blur-md px-10 py-8 border-b border-white/5 flex justify-between items-center z-10">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><ClipboardList size={24}/></div>
                 <div>
-                  <h2 className="text-2xl font-light text-slate-900 uppercase tracking-tight">Mapa de Cotações</h2>
+                  <h2 className="text-2xl font-light text-white uppercase tracking-tight">Mapa de Cotações</h2>
                   <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">ID: {req.id} • Seleção de Fornecedores</p>
                 </div>
               </div>
-              <button onClick={() => setModalCotacaoAberto(false)} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/50 text-slate-600 hover:bg-slate-900 hover:text-white transition-all transform hover:rotate-90 shadow-md"><X size={20}/></button>
+              <button onClick={() => setModalCotacaoAberto(false)} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:bg-red-500 hover:text-white transition-all transform hover:rotate-90"><X size={20}/></button>
             </div>
 
             <div className="p-10 space-y-6">
@@ -387,17 +401,17 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
       {/* MODAL DETALHADO (FICHA TÉCNICA) */}
       {modalAberto && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-6 print:hidden">
-          <div className="bg-slate-300 w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-[4rem] shadow-2xl border border-white flex flex-col animate-in fade-in zoom-in-95 duration-200">
-            
-            <div className="sticky top-0 bg-slate-300/80 backdrop-blur-md px-12 py-10 border-b border-slate-400/30 flex justify-between items-center z-10">
+          <div className="bg-slate-800 w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-[2rem] shadow-2xl border border-white/10 flex flex-col animate-in fade-in zoom-in-95 duration-200">
+
+            <div className="sticky top-0 bg-slate-800/95 backdrop-blur-md px-10 py-8 border-b border-white/5 flex justify-between items-center z-10">
               <div className="flex items-center gap-8">
                 <div className={`w-16 h-16 rounded-3xl text-white flex items-center justify-center font-light text-2xl shadow-xl ${veioDoApp ? 'bg-blue-600 shadow-blue-500/20' : 'bg-slate-900 shadow-slate-400'}`}>{req.id}</div>
-                <div><div className="flex items-center gap-3"><h2 className="text-3xl font-light text-slate-900 tracking-tight leading-none uppercase">Ficha Técnica</h2>{veioDoApp && <span className="bg-blue-600 text-white text-[9px] px-3 py-1 rounded-full font-black">ORIGEM: TÉCNICO (APP)</span>}</div><p className="text-[11px] font-normal text-slate-500 uppercase tracking-[0.4em] mt-1">Gestão de Suprimentos • v3.6</p></div>
+                <div><div className="flex items-center gap-3"><h2 className="text-2xl font-light text-white tracking-tight leading-none uppercase">Ficha Técnica</h2>{veioDoApp && <span className="bg-blue-600 text-white text-[9px] px-3 py-1 rounded-full font-black">TÉCNICO (APP)</span>}</div><p className="text-[10px] font-normal text-slate-500 uppercase tracking-[0.3em] mt-1">Gestão de Suprimentos • v3.6</p></div>
               </div>
-              <button onClick={() => setModalAberto(false)} className="w-14 h-14 flex items-center justify-center rounded-full bg-white/50 text-slate-600 hover:bg-slate-900 hover:text-white transition-all transform hover:rotate-90 shadow-md"><X size={24}/></button>
+              <button onClick={() => setModalAberto(false)} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:bg-red-500 hover:text-white transition-all transform hover:rotate-90"><X size={22}/></button>
             </div>
 
-            <div className="p-12 space-y-8">
+            <div className="p-8 space-y-4">
               <div className="grid grid-cols-1 gap-8">
                 
                 <div className={bentoStyle}>
@@ -414,21 +428,21 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                   <div className="space-y-8">
                     <div>
                       <label className={labelStyle}><Layers size={14}/> Tipo de Requisição</label>
-                      <select value={req.tipo || req.ReqTipo || ""} onChange={e => persist('tipo', e.target.value)} className={inputStyle}>
+                      <select value={req.tipo || req.ReqTipo || ""} onChange={e => persist('tipo', e.target.value)} className={selectStyle}>
                         <option value="">Definir tipo...</option>
                         {TIPOS_REQ.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={labelStyle}><UserCircle size={14}/> Colaborador Solicitante</label>
-                      <select value={req.solicitante || ""} onChange={e => persist('solicitante', e.target.value)} className={inputStyle}>
+                      <select value={req.solicitante || ""} onChange={e => persist('solicitante', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar Usuário...</option>
                         {usuariosBanco.map(u => <option key={u.nome} value={u.nome}>{u.nome}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={labelStyle}><Building2 size={14}/> Setor Destino</label>
-                      <select value={req.setor || req.ReqQuem || ""} onChange={e => persist('setor', e.target.value)} className={inputStyle}>
+                      <select value={req.setor || req.ReqQuem || ""} onChange={e => persist('setor', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar Setor...</option>
                         {DEPARTAMENTOS.map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
@@ -438,9 +452,9 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
 
                 {/* REGRAS CONDICIONAIS DE SETOR: TRATOR-CLIENTE / TRATOR-LOJA */}
                 {localData.setor === "Trator-Cliente" && (
-                  <div className={`${bentoStyle} bg-amber-50/50 border-amber-200 animate-in slide-in-from-top-4`}>
+                  <div className={`${bentoStyle} !bg-amber-500/10 !border-amber-500/20 animate-in slide-in-from-top-4`}>
                     <div className="space-y-8 uppercase">
-                      <h4 className="text-[10px] font-black text-amber-600 tracking-[0.3em] mb-4">Informações do Cliente</h4>
+                      <h4 className="text-[10px] font-black text-amber-400 tracking-[0.3em] mb-4">Informações do Cliente</h4>
                       <div>
                         <label className={labelStyle}><User size={14}/> Nome do Cliente</label>
                         <input value={localData.cliente || ''} onChange={e => setLocalData({...localData, cliente: e.target.value})} onBlur={e => persist('cliente', e.target.value.toUpperCase())} className={inputStyle} />
@@ -455,11 +469,11 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                           <input value={localData.Chassis_Modelo || ''} onChange={e => setLocalData({...localData, Chassis_Modelo: e.target.value})} onBlur={e => persist('Chassis_Modelo', e.target.value.toUpperCase())} className={inputStyle} />
                         </div>
                       </div>
-                      <div className="bg-amber-100/50 p-8 rounded-[2.5rem]">
-                        <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.3em] block mb-4">Valor Cobrado do Cliente</label>
+                      <div className="bg-amber-500/10 p-6 rounded-2xl border border-amber-500/20">
+                        <label className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.3em] block mb-3">Valor Cobrado do Cliente</label>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-amber-700 text-xl font-bold">R$</span>
-                          <input value={localData.valor_cobrado_cliente || ''} onChange={e => setLocalData({...localData, valor_cobrado_cliente: e.target.value})} onBlur={e => persist('valor_cobrado_cliente', e.target.value)} className="w-full text-4xl font-black text-amber-800 bg-transparent outline-none tracking-tighter" placeholder="0,00" />
+                          <span className="text-amber-400 text-xl font-bold">R$</span>
+                          <input value={localData.valor_cobrado_cliente || ''} onChange={e => setLocalData({...localData, valor_cobrado_cliente: e.target.value})} onBlur={e => persist('valor_cobrado_cliente', e.target.value)} className="w-full text-4xl font-black text-amber-300 bg-transparent outline-none tracking-tighter placeholder:text-amber-900" placeholder="0,00" />
                         </div>
                       </div>
                     </div>
@@ -467,9 +481,9 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                 )}
 
                 {localData.setor === "Trator-Loja" && (
-                  <div className={`${bentoStyle} bg-slate-50/50 border-slate-200 animate-in slide-in-from-top-4`}>
+                  <div className={`${bentoStyle} !bg-slate-800/50 !border-white/10 animate-in slide-in-from-top-4`}>
                     <div className="space-y-8 uppercase">
-                      <h4 className="text-[10px] font-black text-slate-600 tracking-[0.3em] mb-4">Informações do Trator (Loja)</h4>
+                      <h4 className="text-[10px] font-black text-slate-400 tracking-[0.3em] mb-4">Informações do Trator (Loja)</h4>
                       <div>
                         <label className={labelStyle}><Cpu size={14}/> Modelo / Chassis do Trator</label>
                         <input value={localData.Chassis_Modelo || ''} onChange={e => setLocalData({...localData, Chassis_Modelo: e.target.value})} onBlur={e => persist('Chassis_Modelo', e.target.value.toUpperCase())} className={inputStyle} />
@@ -478,12 +492,41 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                   </div>
                 )}
 
+                {(localData.tipo === 'Ferramenta' || req.tipo === 'Ferramenta' || req.ReqTipo === 'Ferramenta') && (
+                  <div className={`${bentoStyle} !bg-blue-500/10 !border-blue-500/20 animate-in slide-in-from-top-4`}>
+                    <div className="space-y-8 uppercase">
+                      <h4 className="text-[10px] font-black text-blue-400 tracking-[0.3em] mb-4">Destinação da Ferramenta</h4>
+                      <div>
+                        <label className={labelStyle}><Tag size={14}/> Uso Pessoal ou Geral</label>
+                        <select value={localData.quem_ferramenta || ''} onChange={e => { setLocalData({...localData, quem_ferramenta: e.target.value}); persist('quem_ferramenta', e.target.value); }} className={selectStyle}>
+                          <option value="">Selecione o uso...</option>
+                          <option value="Uso Pessoal">Uso Pessoal (Individual)</option>
+                          <option value="Geral">Uso Geral (Oficina/Setor)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {(req.tipo === 'Frota-Veículos' || req.ReqTipo === 'Frota-Veículos') && (
-                  <div className={`${bentoStyle} bg-blue-50/50 border-blue-200 animate-in slide-in-from-top-4`}>
+                  <div className={`${bentoStyle} !bg-blue-500/10 !border-blue-500/20 animate-in slide-in-from-top-4`}>
                     <div className="space-y-8 uppercase">
                       <div>
                         <label className={labelStyle}><Car size={14}/> Veículo / Placa</label>
-                        <input value={veiculoExibicao || ''} onChange={e => setVeiculoExibicao(e.target.value)} onBlur={e => persist('veiculo', e.target.value.toUpperCase())} className={inputStyle} />
+                        <select
+                          value={localData.veiculo || ''}
+                          onChange={e => {
+                            const selecionado = veiculosBanco.find(v => String(v.IdPlaca) === e.target.value);
+                            setVeiculoExibicao(selecionado?.NumPlaca || e.target.value);
+                            persist('veiculo', e.target.value);
+                          }}
+                          className={selectStyle}
+                        >
+                          <option value="">Selecione o veículo...</option>
+                          {veiculosBanco.map(v => (
+                            <option key={v.IdPlaca} value={v.IdPlaca}>{v.NumPlaca}</option>
+                          ))}
+                        </select>
                       </div>
                       <div><label className={labelStyle}><Gauge size={14}/> Hodômetro / Horímetro</label><input value={localData.hodometro || ''} onChange={e => setLocalData({...localData, hodometro: e.target.value})} onBlur={e => persist('hodometro', e.target.value)} className={inputStyle} /></div>
                     </div>
@@ -494,19 +537,19 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                   <div className="space-y-8">
                     <div>
                       <label className={labelStyle}><Store size={14}/> Fornecedor Vinculado</label>
-                      <select value={req.fornecedor || ''} onChange={e => persist('fornecedor', e.target.value)} className={inputStyle}>
+                      <select value={req.fornecedor || ''} onChange={e => persist('fornecedor', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar da lista...</option>
                         {fornecedoresBanco.map(f => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
                       </select>
                     </div>
                     <div><label className={labelStyle}><Receipt size={14}/> Nota Fiscal</label><input value={localData.numero_nota || ''} onChange={(e) => setLocalData({...localData, numero_nota: e.target.value})} onBlur={(e) => persist('numero_nota', e.target.value)} className={inputStyle} placeholder="Nº Documento" /></div>
-                    <div className="bg-red-50 border border-red-100 p-8 rounded-[2.5rem] shadow-sm"><label className="text-[10px] font-bold text-red-500 uppercase tracking-[0.3em] block mb-4">Custo Real Despesa</label><div className="flex items-baseline gap-2"><span className="text-red-500 text-xl font-bold uppercase">R$</span><input value={localData.valor_despeza || ''} onChange={e => setLocalData({...localData, valor_despeza: e.target.value})} onBlur={e => persist('valor_despeza', e.target.value)} className="w-full text-5xl font-black text-red-600 bg-transparent outline-none tracking-tighter" placeholder="0,00" /></div></div>
+                    <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl"><label className="text-[10px] font-bold text-red-400 uppercase tracking-[0.3em] block mb-3">Custo Real Despesa</label><div className="flex items-baseline gap-2"><span className="text-red-400 text-xl font-bold uppercase">R$</span><input value={localData.valor_despeza || ''} onChange={e => setLocalData({...localData, valor_despeza: e.target.value})} onBlur={e => persist('valor_despeza', e.target.value)} className="w-full text-5xl font-black text-red-300 bg-transparent outline-none tracking-tighter placeholder:text-red-900" placeholder="0,00" /></div></div>
                   </div>
                 </div>
 
                 <div className={bentoStyle}>
                   <label className={labelStyle}><FileText size={14}/> Descrição Detalhada</label>
-                  <textarea value={localData.obs || ""} onChange={e => setLocalData({...localData, obs: e.target.value})} onBlur={e => persist('obs', e.target.value)} className="w-full text-base font-light outline-none h-40 resize-none italic text-slate-500 bg-transparent pt-2 border-b border-slate-100 mb-8" />
+                  <textarea value={localData.obs || ""} onChange={e => setLocalData({...localData, obs: e.target.value})} onBlur={e => persist('obs', e.target.value)} className="w-full text-base font-light outline-none h-40 resize-none italic text-slate-400 bg-transparent pt-2 border-b border-white/10 mb-8 placeholder:text-slate-700" />
                   
                   {/* Bloco de Documentação Anexada */}
                   <label className={labelStyle}><Paperclip size={14}/> Documentação anexada</label>
@@ -516,8 +559,8 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                       const isDriveFile = req[item.field]?.startsWith('SupaAtualizarReq_Images/');
                       return (
                         <div key={item.field} className="flex items-center gap-2">
-                          <label className="flex-1 flex items-center justify-between p-6 rounded-2xl bg-slate-50 hover:bg-white border border-slate-200 cursor-pointer transition-all group shadow-sm">
-                            <div className="flex items-center gap-4"><div className="text-slate-400 group-hover:text-blue-500">{item.icon}</div><span className="text-[11px] font-bold text-slate-600 uppercase tracking-tighter">{item.label}</span></div>
+                          <label className="flex-1 flex items-center justify-between p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer transition-all group">
+                            <div className="flex items-center gap-4"><div className="text-slate-500 group-hover:text-blue-400">{item.icon}</div><span className="text-[11px] font-bold text-slate-300 uppercase tracking-tighter">{item.label}</span></div>
                             <input type="file" className="hidden" onChange={e => handleFileUpload(e, item.field)} />
                             {req[item.field] ? <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div> : <ArrowRight size={14} className="text-slate-200"/>}
                           </label>
@@ -549,11 +592,9 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-8 pt-12 border-t border-slate-400/20">
-                <div className="flex flex-col md:flex-row gap-4 w-full max-w-2xl">
-                    <button onClick={() => setModalCotacaoAberto(true)} className="flex-1 bg-blue-600 text-white px-8 py-6 rounded-full font-bold uppercase text-[12px] tracking-[0.2em] hover:bg-blue-700 hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 shadow-xl"><ClipboardList size={20} /> Mapa de Cotação</button>
-                    <button onClick={handlePrint} className="flex-1 bg-slate-900 text-white px-8 py-6 rounded-full font-bold uppercase text-[12px] tracking-[0.2em] hover:bg-blue-600 hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 shadow-xl"><Printer size={20} /> Gerar PDF Requisição</button>
-                </div>
+              <div className="flex flex-col md:flex-row gap-3 pt-6 border-t border-white/5">
+                <button onClick={() => setModalCotacaoAberto(true)} className="flex-1 bg-blue-600 text-white px-6 py-5 rounded-2xl font-bold uppercase text-[11px] tracking-[0.2em] hover:bg-blue-500 transition-all active:scale-95 flex items-center justify-center gap-3"><ClipboardList size={18} /> Mapa de Cotação</button>
+                <button onClick={handlePrint} className="flex-1 bg-white/10 text-white px-6 py-5 rounded-2xl font-bold uppercase text-[11px] tracking-[0.2em] hover:bg-blue-600 transition-all active:scale-95 flex items-center justify-center gap-3"><Printer size={18} /> Gerar PDF</button>
               </div>
             </div>
           </div>

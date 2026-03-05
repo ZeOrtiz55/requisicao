@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-
-const usuarios = ["Danilo de Souza", "Fernando Leonel", "Gabriel Moraes", "Henri Hione", "Jose Ortiz", "Luiz Fernando (Motorista)", "Nicolas Dario", "Paulo Motta", "Jose Antonio de Oliveira", "Pós Vendas- Escritório"];
+import { supabase } from '../lib/supabase';
 
 const EMPRESAS = {
   NOVA: { nome: "NOVA TRATORES MÁQUINAS AGRÍCOLAS LTDA", endereco: "AVENIDA SÃO SEBASTIÃO, 1065 | Piraju - SP" },
@@ -9,13 +8,28 @@ const EMPRESAS = {
 };
 
 export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [veiculos, setVeiculos] = useState<any[]>([]);
+
   const [formData, setFormData] = useState({
     titulo: '', tipo: '', solicitante: '', setor: '',
     data: new Date().toISOString().split('T')[0],
-    empresa: '', endereco_empr: '', veiculo: '', hodometro: '', 
+    empresa: '', endereco_empr: '', veiculo: '', hodometro: '',
     cliente: '', ordem_servico: '', fornecedor: '', obs: '',
-    valor_cobrado_cliente: '', quem_ferramenta: '', status: 'pedido'
+    valor_cobrado_cliente: '', quem_ferramenta: '', Chassis_Modelo: '', status: 'pedido'
   });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [{ data: users }, { data: veic }] = await Promise.all([
+        supabase.from('req_usuarios').select('nome').order('nome'),
+        supabase.from('SupaPlacas').select('IdPlaca, NumPlaca').order('NumPlaca'),
+      ]);
+      if (users) setUsuarios(users);
+      if (veic) setVeiculos(veic);
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const config = formData.tipo === 'Frota-Veiculos' ? EMPRESAS.CASTRO : EMPRESAS.NOVA;
@@ -64,7 +78,7 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
               <label className={labelStyle}>Solicitante</label>
               <select required onChange={e => setFormData({...formData, solicitante: e.target.value})} className={inputStyle}>
                 <option value="" className="bg-slate-900">Quem pede?</option>
-                {usuarios.map(u => <option key={u} value={u} className="bg-slate-900">{u}</option>)}
+                {usuarios.map(u => <option key={u.nome} value={u.nome} className="bg-slate-900">{u.nome}</option>)}
               </select>
             </div>
             <div>
@@ -93,23 +107,58 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
             </div>
           )}
 
+          {/* FROTA-VEICULOS */}
+          {formData.tipo === 'Frota-Veiculos' && (
+            <div className="p-6 bg-blue-500/10 rounded-3xl border border-blue-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
+              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Informacoes do Veiculo</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelStyle}>Veiculo / Placa</label>
+                  <select required value={formData.veiculo} onChange={e => setFormData({...formData, veiculo: e.target.value})} className={`${inputStyle} !border-blue-500/50`}>
+                    <option value="" className="bg-slate-900">Selecione o veiculo...</option>
+                    {veiculos.map(v => <option key={v.IdPlaca} value={v.IdPlaca} className="bg-slate-900">{v.NumPlaca}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyle}>Hodometro / Horimetro</label>
+                  <input placeholder="Ex: 12.500 km" value={formData.hodometro} onChange={e => setFormData({...formData, hodometro: e.target.value})} className={`${inputStyle} !border-blue-500/50`} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TRATOR-LOJA */}
+          {formData.tipo === 'Trator-Loja' && (
+            <div className="p-6 bg-slate-700/30 rounded-3xl border border-slate-600/50 animate-in fade-in slide-in-from-top-4 duration-500">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Informacoes do Trator (Loja)</p>
+              <div>
+                <label className={labelStyle}>Chassis / Modelo do Trator</label>
+                <input placeholder="Ex: VALTRA BM110 - CHASSIS 123456" value={formData.Chassis_Modelo} onChange={e => setFormData({...formData, Chassis_Modelo: e.target.value.toUpperCase()})} className={inputStyle} />
+              </div>
+            </div>
+          )}
+
+          {/* TRATOR-CLIENTE */}
           {formData.tipo === 'Trator-Cliente' && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 bg-orange-500/10 rounded-2xl border border-orange-500/20 animate-in fade-in zoom-in-95">
-              <div className="md:col-span-1">
-                <label className="text-[10px] font-bold text-orange-400 uppercase">Cliente</label>
-                <input onChange={e => setFormData({...formData, cliente: e.target.value.toUpperCase()})} className={`${inputStyle} !text-base border-orange-500/20`} />
-              </div>
-              <div className="md:col-span-1">
-                <label className="text-[10px] font-bold text-orange-400 uppercase">O.S.</label>
-                <input onChange={e => setFormData({...formData, ordem_servico: e.target.value})} className={`${inputStyle} !text-base border-orange-500/20`} />
-              </div>
-              <div className="md:col-span-1">
-                <label className="text-[10px] font-bold text-orange-400 uppercase">Trator</label>
-                <input onChange={e => setFormData({...formData, veiculo: e.target.value.toUpperCase()})} className={`${inputStyle} !text-base border-orange-500/20`} />
-              </div>
-              <div className="md:col-span-1">
-                <label className="text-[10px] font-bold text-orange-400 uppercase">Valor</label>
-                <input placeholder="0,00" onChange={e => setFormData({...formData, valor_cobrado_cliente: e.target.value})} className={`${inputStyle} !text-base border-orange-500/40 font-bold text-orange-400`} />
+            <div className="p-6 bg-orange-500/10 rounded-3xl border border-orange-500/20 animate-in fade-in slide-in-from-top-4 duration-500">
+              <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-4">Informacoes do Cliente</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-[10px] font-bold text-orange-400 uppercase">Cliente</label>
+                  <input onChange={e => setFormData({...formData, cliente: e.target.value.toUpperCase()})} className={`${inputStyle} !text-base border-orange-500/20`} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-orange-400 uppercase">O.S.</label>
+                  <input onChange={e => setFormData({...formData, ordem_servico: e.target.value})} className={`${inputStyle} !text-base border-orange-500/20`} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-orange-400 uppercase">Chassis / Modelo do Trator</label>
+                  <input placeholder="Ex: VALTRA BM110 - CHASSIS 123456" value={formData.Chassis_Modelo} onChange={e => setFormData({...formData, Chassis_Modelo: e.target.value.toUpperCase()})} className={`${inputStyle} !text-base border-orange-500/20`} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-orange-400 uppercase">Valor Cobrado do Cliente</label>
+                  <input placeholder="0,00" onChange={e => setFormData({...formData, valor_cobrado_cliente: e.target.value})} className={`${inputStyle} !text-base border-orange-500/40 font-bold text-orange-400`} />
+                </div>
               </div>
             </div>
           )}
