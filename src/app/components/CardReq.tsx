@@ -216,8 +216,8 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
     }
   };
 
-  const labelStyle = "text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2";
-  const bentoStyle = "bg-white/[0.03] border border-white/8 rounded-2xl p-8 transition-all duration-300 w-full";
+  const labelStyle = "text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2";
+  const bentoStyle = "bg-white/[0.03] border border-white/8 rounded-xl p-8 transition-all duration-200 w-full";
   const inputStyle = "w-full text-base font-light text-white outline-none border-b border-white/10 focus:border-blue-500 pb-2 bg-transparent transition-all cursor-pointer placeholder:text-slate-600";
   const selectStyle = `${inputStyle} [&>option]:text-black [&>option]:bg-white`;
 
@@ -231,14 +231,14 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
 
       {/* MODAL COTAÇÃO */}
       {modalCotacaoAberto && (
-        <div className="fixed inset-0 bg-blue-900/40 backdrop-blur-xl z-[60] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200">
-          <div className="bg-slate-950 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl border border-white/10 flex flex-col">
+        <div className="fixed inset-0 bg-blue-900/40 backdrop-blur-xl z-[60] flex items-center justify-center p-4 md:p-6">
+          <div className="bg-slate-950 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-white/10 flex flex-col">
             <div className="sticky top-0 bg-slate-800/95 backdrop-blur-md px-10 py-8 border-b border-white/5 flex justify-between items-center z-10">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><ClipboardList size={24}/></div>
+                <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center"><ClipboardList size={24}/></div>
                 <div>
                   <h2 className="text-2xl font-light text-white uppercase tracking-tight">Mapa de Cotações</h2>
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">ID: {req.id} • Seleção de Fornecedores</p>
+                  <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">ID: {req.id} • Seleção de Fornecedores</p>
                 </div>
               </div>
               <button onClick={() => setModalCotacaoAberto(false)} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:bg-red-500 hover:text-white transition-all transform hover:rotate-90"><X size={20}/></button>
@@ -248,11 +248,11 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
               {[...Array(fornecedoresVisiveis)].map((_, i) => {
                 const idx = i + 1;
                 return (
-                  <div key={idx} className={`${bentoStyle} border-l-[8px] border-l-blue-500 animate-in slide-in-from-right-4 duration-300 relative`}>
-                    <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+                  <div key={idx} className={`${bentoStyle} border-l-[8px] border-l-blue-500 relative`}>
+                    <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
                       <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">{idx}</div>
-                      <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800">Fornecedor {idx}</h3>
-                      <button onClick={() => removerCotacao(idx)} className="ml-auto p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-all shadow-sm" title="Remover Fornecedor"><X size={16}/></button>
+                      <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Fornecedor {idx}</h3>
+                      <button onClick={() => removerCotacao(idx)} className="ml-auto p-2 rounded-full bg-white/10 text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-all" title="Remover Fornecedor"><X size={16}/></button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                       <div><label className={labelStyle}><Store size={14}/> Empresa</label><input value={cotacaoData[`fornecedor${idx}`] || ''} onChange={e => setCotacaoData({...cotacaoData, [`fornecedor${idx}`]: e.target.value.toUpperCase()})} className={inputStyle} /></div>
@@ -264,9 +264,9 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
               })}
               <div className="flex flex-col md:flex-row gap-4 pt-6">
                 {fornecedoresVisiveis < 5 && (
-                  <button onClick={() => setFornecedoresVisiveis(prev => prev + 1)} className="flex-1 bg-white border-2 border-dashed border-blue-400 text-blue-600 py-6 rounded-3xl font-bold uppercase text-[10px] tracking-widest hover:bg-blue-50 transition-all flex items-center justify-center gap-3"><Plus size={18}/> Adicionar Fornecedor</button>
+                  <button onClick={() => setFornecedoresVisiveis(prev => prev + 1)} className="flex-1 bg-white/5 border-2 border-dashed border-blue-400/30 text-blue-400 py-6 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-blue-500/10 transition-all flex items-center justify-center gap-3"><Plus size={18}/> Adicionar Fornecedor</button>
                 )}
-                <button onClick={salvarCotacao} className="flex-1 bg-slate-900 text-white py-6 rounded-3xl font-bold uppercase text-[10px] tracking-[0.3em] hover:bg-blue-600 shadow-xl transition-all flex items-center justify-center gap-3"><CheckCheck size={18}/> Salvar Mapa</button>
+                <button onClick={salvarCotacao} className="flex-1 bg-blue-600 text-white py-6 rounded-xl font-bold uppercase text-xs tracking-[0.3em] hover:bg-blue-500 shadow-xl transition-all flex items-center justify-center gap-3"><CheckCheck size={18}/> Salvar Mapa</button>
               </div>
             </div>
           </div>
@@ -276,12 +276,12 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
       {/* MODAL DETALHADO (FICHA TÉCNICA) */}
       {modalAberto && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-6 print:hidden">
-          <div className="bg-slate-800 w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-[2rem] shadow-2xl border border-white/10 flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-slate-800 w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl shadow-2xl border border-white/10 flex flex-col">
 
             <div className="sticky top-0 bg-slate-800/95 backdrop-blur-md px-10 py-8 border-b border-white/5 flex justify-between items-center z-10">
               <div className="flex items-center gap-8">
-                <div className={`w-16 h-16 rounded-3xl text-white flex items-center justify-center font-light text-2xl shadow-xl ${veioDoApp ? 'bg-blue-600 shadow-blue-500/20' : 'bg-slate-900 shadow-slate-400'}`}>{req.id}</div>
-                <div><div className="flex items-center gap-3"><h2 className="text-2xl font-light text-white tracking-tight leading-none uppercase">Ficha Técnica</h2>{veioDoApp && <span className="bg-blue-600 text-white text-[9px] px-3 py-1 rounded-full font-black">TÉCNICO (APP)</span>}</div><p className="text-[10px] font-normal text-slate-500 uppercase tracking-[0.3em] mt-1">Gestão de Suprimentos • v3.6</p></div>
+                <div className={`w-16 h-16 rounded-2xl text-white flex items-center justify-center font-light text-2xl ${veioDoApp ? 'bg-blue-600' : 'bg-slate-900'}`}>{req.id}</div>
+                <div><div className="flex items-center gap-3"><h2 className="text-2xl font-light text-white tracking-tight leading-none uppercase">Ficha Técnica</h2>{veioDoApp && <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-lg font-black">TÉCNICO (APP)</span>}</div><p className="text-xs font-normal text-slate-500 uppercase tracking-[0.3em] mt-1">Gestão de Suprimentos</p></div>
               </div>
               <button onClick={fecharModal} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:bg-red-500 hover:text-white transition-all transform hover:rotate-90"><X size={22}/></button>
             </div>
@@ -327,9 +327,9 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
 
                 {/* REGRAS CONDICIONAIS DE SETOR: TRATOR-CLIENTE / TRATOR-LOJA */}
                 {localData.setor === "Trator-Cliente" && (
-                  <div className={`${bentoStyle} !bg-amber-500/10 !border-amber-500/20 animate-in slide-in-from-top-4`}>
+                  <div className={`${bentoStyle} !bg-amber-500/10 !border-amber-500/20`}>
                     <div className="space-y-8 uppercase">
-                      <h4 className="text-[10px] font-black text-amber-400 tracking-[0.3em] mb-4">Informações do Cliente</h4>
+                      <h4 className="text-xs font-black text-amber-400 tracking-[0.3em] mb-4">Informações do Cliente</h4>
                       <div>
                         <label className={labelStyle}><User size={14}/> Nome do Cliente</label>
                         <input value={localData.cliente || ''} onChange={e => setLocalData({...localData, cliente: e.target.value})} onBlur={e => persist('cliente', e.target.value.toUpperCase())} className={inputStyle} />
@@ -344,8 +344,8 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                           <input value={localData.Chassis_Modelo || ''} onChange={e => setLocalData({...localData, Chassis_Modelo: e.target.value})} onBlur={e => persist('Chassis_Modelo', e.target.value.toUpperCase())} className={inputStyle} />
                         </div>
                       </div>
-                      <div className="bg-amber-500/10 p-6 rounded-2xl border border-amber-500/20">
-                        <label className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.3em] block mb-3">Valor Cobrado do Cliente</label>
+                      <div className="bg-amber-500/10 p-6 rounded-xl border border-amber-500/20">
+                        <label className="text-xs font-bold text-amber-400 uppercase tracking-[0.3em] block mb-3">Valor Cobrado do Cliente</label>
                         <div className="flex items-baseline gap-2">
                           <span className="text-amber-400 text-xl font-bold">R$</span>
                           <input value={localData.valor_cobrado_cliente || ''} onChange={e => setLocalData({...localData, valor_cobrado_cliente: e.target.value})} onBlur={e => persist('valor_cobrado_cliente', e.target.value)} className="w-full text-4xl font-black text-amber-300 bg-transparent outline-none tracking-tighter placeholder:text-amber-900" placeholder="0,00" />
@@ -356,9 +356,9 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                 )}
 
                 {localData.setor === "Trator-Loja" && (
-                  <div className={`${bentoStyle} !bg-slate-800/50 !border-white/10 animate-in slide-in-from-top-4`}>
+                  <div className={`${bentoStyle} !bg-slate-800/50 !border-white/10`}>
                     <div className="space-y-8 uppercase">
-                      <h4 className="text-[10px] font-black text-slate-400 tracking-[0.3em] mb-4">Informações do Trator (Loja)</h4>
+                      <h4 className="text-xs font-black text-slate-400 tracking-[0.3em] mb-4">Informações do Trator (Loja)</h4>
                       <div>
                         <label className={labelStyle}><Cpu size={14}/> Modelo / Chassis do Trator</label>
                         <input value={localData.Chassis_Modelo || ''} onChange={e => setLocalData({...localData, Chassis_Modelo: e.target.value})} onBlur={e => persist('Chassis_Modelo', e.target.value.toUpperCase())} className={inputStyle} />
@@ -368,9 +368,9 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                 )}
 
                 {(localData.tipo === 'Ferramenta' || req.tipo === 'Ferramenta' || req.ReqTipo === 'Ferramenta') && (
-                  <div className={`${bentoStyle} !bg-blue-500/10 !border-blue-500/20 animate-in slide-in-from-top-4`}>
+                  <div className={`${bentoStyle} !bg-blue-500/10 !border-blue-500/20`}>
                     <div className="space-y-8 uppercase">
-                      <h4 className="text-[10px] font-black text-blue-400 tracking-[0.3em] mb-4">Destinação da Ferramenta</h4>
+                      <h4 className="text-xs font-black text-blue-400 tracking-[0.3em] mb-4">Destinação da Ferramenta</h4>
                       <div>
                         <label className={labelStyle}><Tag size={14}/> Uso Pessoal ou Geral</label>
                         <select value={localData.quem_ferramenta || ''} onChange={e => { setLocalData({...localData, quem_ferramenta: e.target.value}); persist('quem_ferramenta', e.target.value); }} className={selectStyle}>
@@ -384,7 +384,7 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                 )}
 
                 {(req.tipo === 'Frota-Veículos' || req.ReqTipo === 'Frota-Veículos') && (
-                  <div className={`${bentoStyle} !bg-blue-500/10 !border-blue-500/20 animate-in slide-in-from-top-4`}>
+                  <div className={`${bentoStyle} !bg-blue-500/10 !border-blue-500/20`}>
                     <div className="space-y-8 uppercase">
                       <div>
                         <label className={labelStyle}><Car size={14}/> Veículo / Placa</label>
@@ -414,7 +414,7 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                       </select>
                     </div>
                     <div><label className={labelStyle}><Receipt size={14}/> Nota Fiscal</label><input value={localData.numero_nota || ''} onChange={(e) => setLocalData({...localData, numero_nota: e.target.value})} onBlur={(e) => persist('numero_nota', e.target.value)} className={inputStyle} placeholder="Nº Documento" /></div>
-                    <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl"><label className="text-[10px] font-bold text-red-400 uppercase tracking-[0.3em] block mb-3">Custo Real Despesa</label><div className="flex items-baseline gap-2"><span className="text-red-400 text-xl font-bold uppercase">R$</span><input value={localData.valor_despeza || ''} onChange={e => setLocalData({...localData, valor_despeza: e.target.value})} onBlur={e => persist('valor_despeza', e.target.value)} className="w-full text-5xl font-black text-red-300 bg-transparent outline-none tracking-tighter placeholder:text-red-900" placeholder="0,00" /></div></div>
+                    <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-xl"><label className="text-xs font-bold text-red-400 uppercase tracking-[0.3em] block mb-3">Custo Real Despesa</label><div className="flex items-baseline gap-2"><span className="text-red-400 text-xl font-bold uppercase">R$</span><input value={localData.valor_despeza || ''} onChange={e => setLocalData({...localData, valor_despeza: e.target.value})} onBlur={e => persist('valor_despeza', e.target.value)} className="w-full text-5xl font-black text-red-300 bg-transparent outline-none tracking-tighter placeholder:text-red-900" placeholder="0,00" /></div></div>
                   </div>
                 </div>
 
@@ -430,8 +430,8 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                       const isDriveFile = req[item.field]?.startsWith('SupaAtualizarReq_Images/');
                       return (
                         <div key={item.field} className="flex items-center gap-2">
-                          <label className="flex-1 flex items-center justify-between p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer transition-all group">
-                            <div className="flex items-center gap-4"><div className="text-slate-500 group-hover:text-blue-400">{item.icon}</div><span className="text-[11px] font-bold text-slate-300 uppercase tracking-tighter">{item.label}</span></div>
+                          <label className="flex-1 flex items-center justify-between p-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer transition-all group">
+                            <div className="flex items-center gap-4"><div className="text-slate-500 group-hover:text-blue-400">{item.icon}</div><span className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{item.label}</span></div>
                             <input type="file" className="hidden" onChange={e => handleFileUpload(e, item.field)} />
                             {req[item.field] ? <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div> : <ArrowRight size={14} className="text-slate-200"/>}
                           </label>
@@ -464,8 +464,8 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
               </div>
 
               <div className="flex flex-col md:flex-row gap-3 pt-6 border-t border-white/5">
-                <button onClick={() => setModalCotacaoAberto(true)} className="flex-1 bg-blue-600 text-white px-6 py-5 rounded-2xl font-bold uppercase text-[11px] tracking-[0.2em] hover:bg-blue-500 transition-all active:scale-95 flex items-center justify-center gap-3"><ClipboardList size={18} /> Mapa de Cotação</button>
-                <button onClick={handlePrint} className="flex-1 bg-white/10 text-white px-6 py-5 rounded-2xl font-bold uppercase text-[11px] tracking-[0.2em] hover:bg-blue-600 transition-all active:scale-95 flex items-center justify-center gap-3"><Printer size={18} /> Gerar PDF</button>
+                <button onClick={() => setModalCotacaoAberto(true)} className="flex-1 bg-blue-600 text-white px-6 py-5 rounded-xl font-bold uppercase text-xs tracking-[0.2em] hover:bg-blue-500 transition-all flex items-center justify-center gap-3"><ClipboardList size={18} /> Mapa de Cotação</button>
+                <button onClick={handlePrint} className="flex-1 bg-white/10 text-white px-6 py-5 rounded-xl font-bold uppercase text-xs tracking-[0.2em] hover:bg-blue-600 transition-all flex items-center justify-center gap-3"><Printer size={18} /> Gerar PDF</button>
               </div>
             </div>
           </div>

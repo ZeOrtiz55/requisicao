@@ -75,14 +75,14 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
     });
   }, [requisicoes, filtroID, filtroFornecedor, filtroMes]);
 
-  const filterInputStyle = "bg-transparent text-slate-200 text-[11px] font-light tracking-widest border-b border-white/10 outline-none focus:border-blue-500 pb-1 transition-all placeholder:text-slate-500 appearance-none cursor-pointer";
+  const filterInputStyle = "bg-transparent text-slate-200 text-sm font-light tracking-widest border-b border-white/10 outline-none focus:border-blue-500 pb-1 transition-all placeholder:text-slate-500 appearance-none cursor-pointer";
 
   return (
     <div className="w-full bg-slate-800 min-h-screen transition-all duration-700 pb-20">
       
-      {/* BARRA DE FILTROS - GLASSMORPHISM SUTIL */}
+      {/* BARRA DE FILTROS */}
       <div className="w-full px-8 pt-8 pb-4">
-        <div className="max-w-fit mx-auto bg-white/[0.03] backdrop-blur-md border border-white/5 p-4 md:px-10 rounded-full flex flex-wrap gap-8 items-center justify-center shadow-2xl">
+        <div className="max-w-3xl mx-auto bg-slate-900/80 border border-white/10 p-5 md:px-10 rounded-2xl flex flex-wrap gap-8 items-center justify-center shadow-lg">
           
           <div className="flex items-center gap-3">
             <Search size={14} className="text-blue-400"/>
@@ -120,7 +120,7 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
           </div>
 
           {(filtroID || filtroFornecedor || filtroMes) && (
-            <button onClick={() => {setFiltroID(''); setFiltroFornecedor(''); setFiltroMes('')}} className="text-[9px] font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">
+            <button onClick={() => {setFiltroID(''); setFiltroFornecedor(''); setFiltroMes('')}} className="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">
               <X size={12} /> LIMPAR
             </button>
           )}
@@ -140,19 +140,19 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
                 onDragOver={(e) => handleDragOver(e, col.id)}
                 onDragLeave={() => setColunaArrastando(null)}
                 onDrop={(e) => handleDrop(e, col.id)}
-                className={`flex-1 min-w-[320px] max-w-[380px] flex flex-col rounded-[2rem] transition-all duration-500 border border-white/[0.02] ${
-                  isOver ? 'bg-white/[0.04] scale-[1.01]' : 'bg-transparent'
+                className={`flex-1 min-w-[280px] max-w-[380px] flex flex-col rounded-2xl transition-all duration-300 border border-white/[0.02] ${
+                  isOver ? 'bg-white/[0.04]' : 'bg-transparent'
                 }`}
               >
                 {/* TÍTULOS DAS FASES */}
-                <div className="py-4 px-6 bg-slate-50/95 backdrop-blur-sm rounded-t-[1.9rem] border-b border-slate-200 shadow-sm">
+                <div className="py-4 px-6 bg-slate-900/90 backdrop-blur-sm rounded-t-2xl border-b border-white/10">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-[11px] font-normal text-slate-900 uppercase tracking-[0.3em]">
+                    <h3 className="text-xs font-medium text-slate-300 uppercase tracking-[0.2em]">
                       {col.titulo}
                     </h3>
                     <div className="flex items-center gap-2.5">
-                      <span className="text-[10px] font-medium text-slate-400">{items.length}</span>
-                      <div className={`w-2 h-2 rounded-full ${col.cor} shadow-sm`}></div>
+                      <span className="text-xs font-medium text-slate-500">{items.length}</span>
+                      <div className={`w-2 h-2 rounded-full ${col.cor}`}></div>
                     </div>
                   </div>
                 </div>
@@ -173,16 +173,16 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
                       {items.length > (limitesPorColuna[col.id] || CARDS_POR_VEZ) && (
                         <button
                           onClick={() => setLimitesPorColuna(prev => ({ ...prev, [col.id]: (prev[col.id] || CARDS_POR_VEZ) + CARDS_POR_VEZ }))}
-                          className="w-full py-4 rounded-2xl border border-dashed border-white/10 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all"
+                          className="w-full py-4 rounded-xl border border-dashed border-white/10 text-xs font-bold text-slate-400 uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all"
                         >
                           Carregar mais ({items.length - (limitesPorColuna[col.id] || CARDS_POR_VEZ)} restantes)
                         </button>
                       )}
                     </>
                   ) : (
-                    <div className="py-12 border border-dashed border-white/5 rounded-3xl flex flex-col items-center justify-center gap-2 opacity-10">
+                    <div className="py-12 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 opacity-10">
                       <Layout size={18} className="text-white" />
-                      <span className="text-[8px] font-bold uppercase tracking-[0.4em] text-white">Livre</span>
+                      <span className="text-xs font-bold uppercase tracking-[0.4em] text-white">Livre</span>
                     </div>
                   )}
                 </div>

@@ -48,7 +48,7 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Fundo alterado para escuro para suportar as letras brancas pedidas */}
-      <div className="bg-slate-900 rounded-[3rem] border border-white/10 shadow-2xl p-8 md:p-12 text-white">
+      <div className="bg-slate-900 rounded-2xl border border-white/10 shadow-2xl p-8 md:p-12 text-white">
         <div className="mb-10">
           <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Nova Requisição</h2>
           <p className="text-base text-slate-400 mt-2">Preencha os dados técnicos abaixo para iniciar o processo.</p>
@@ -92,7 +92,7 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
 
           {/* NOVO CAMPO: QUEM FERRAMENTA (Aparece apenas se tipo for Ferramenta) */}
           {formData.tipo === 'Ferramenta' && (
-            <div className="p-8 bg-blue-600/10 rounded-3xl border border-blue-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="p-8 bg-blue-600/10 rounded-2xl border border-blue-500/30">
               <label className={labelStyle}>Destinação da Ferramenta</label>
               <select 
                 required 
@@ -109,8 +109,8 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
 
           {/* FROTA-VEICULOS */}
           {formData.tipo === 'Frota-Veiculos' && (
-            <div className="p-6 bg-blue-500/10 rounded-3xl border border-blue-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
-              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Informacoes do Veiculo</p>
+            <div className="p-6 bg-blue-500/10 rounded-2xl border border-blue-500/30">
+              <p className="text-xs font-black text-blue-400 uppercase tracking-widest mb-4">Informacoes do Veiculo</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className={labelStyle}>Veiculo / Placa</label>
@@ -129,8 +129,8 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
 
           {/* TRATOR-LOJA */}
           {formData.tipo === 'Trator-Loja' && (
-            <div className="p-6 bg-slate-700/30 rounded-3xl border border-slate-600/50 animate-in fade-in slide-in-from-top-4 duration-500">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Informacoes do Trator (Loja)</p>
+            <div className="p-6 bg-slate-700/30 rounded-2xl border border-slate-600/50">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Informacoes do Trator (Loja)</p>
               <div>
                 <label className={labelStyle}>Chassis / Modelo do Trator</label>
                 <input placeholder="Ex: VALTRA BM110 - CHASSIS 123456" value={formData.Chassis_Modelo} onChange={e => setFormData({...formData, Chassis_Modelo: e.target.value.toUpperCase()})} className={inputStyle} />
@@ -140,23 +140,23 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
 
           {/* TRATOR-CLIENTE */}
           {formData.tipo === 'Trator-Cliente' && (
-            <div className="p-6 bg-orange-500/10 rounded-3xl border border-orange-500/20 animate-in fade-in slide-in-from-top-4 duration-500">
-              <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-4">Informacoes do Cliente</p>
+            <div className="p-6 bg-orange-500/10 rounded-2xl border border-orange-500/20">
+              <p className="text-xs font-black text-orange-400 uppercase tracking-widest mb-4">Informacoes do Cliente</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-[10px] font-bold text-orange-400 uppercase">Cliente</label>
+                  <label className="text-xs font-bold text-orange-400 uppercase">Cliente</label>
                   <input onChange={e => setFormData({...formData, cliente: e.target.value.toUpperCase()})} className={`${inputStyle} !text-base border-orange-500/20`} />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-orange-400 uppercase">O.S.</label>
+                  <label className="text-xs font-bold text-orange-400 uppercase">O.S.</label>
                   <input onChange={e => setFormData({...formData, ordem_servico: e.target.value})} className={`${inputStyle} !text-base border-orange-500/20`} />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-orange-400 uppercase">Chassis / Modelo do Trator</label>
+                  <label className="text-xs font-bold text-orange-400 uppercase">Chassis / Modelo do Trator</label>
                   <input placeholder="Ex: VALTRA BM110 - CHASSIS 123456" value={formData.Chassis_Modelo} onChange={e => setFormData({...formData, Chassis_Modelo: e.target.value.toUpperCase()})} className={`${inputStyle} !text-base border-orange-500/20`} />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-orange-400 uppercase">Valor Cobrado do Cliente</label>
+                  <label className="text-xs font-bold text-orange-400 uppercase">Valor Cobrado do Cliente</label>
                   <input placeholder="0,00" onChange={e => setFormData({...formData, valor_cobrado_cliente: e.target.value})} className={`${inputStyle} !text-base border-orange-500/40 font-bold text-orange-400`} />
                 </div>
               </div>
@@ -168,7 +168,7 @@ export default function FormReq({ onSave }: { onSave: (data: any) => void }) {
             <textarea rows={4} onChange={e => setFormData({...formData, obs: e.target.value})} className={`${inputStyle} resize-none italic`} placeholder="Descreva os itens ou serviços necessários..." />
           </div>
 
-          <button type="submit" className="w-full bg-white text-slate-900 font-black py-6 rounded-[2rem] shadow-2xl hover:bg-blue-500 hover:text-white transition-all active:scale-[0.98] uppercase text-sm tracking-[0.4em]">
+          <button type="submit" className="w-full bg-white text-slate-900 font-black py-6 rounded-xl shadow-2xl hover:bg-blue-500 hover:text-white transition-all uppercase text-sm tracking-[0.4em]">
             Confirmar e Enviar Pedido
           </button>
         </form>
