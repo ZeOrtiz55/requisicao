@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase'; 
 import TemplatePDF from './TemplatePDF';
 import { 
@@ -17,107 +17,55 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyIatVqhjdeBeo
 const DEPARTAMENTOS = ["Trator-Loja", "Trator-Cliente", "Oficina", "Comercial"];
 const TIPOS_REQ = ["Peça", "Alimentação", "Ferramenta", "Serviço de Terceiros", "Almoxarifado", "Frota-Veículos", "Insumo Infra"];
 
-export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate: any, onPrint: any }) {
+export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados }: { req: any, onUpdate: any, onPrint: any, dadosCompartilhados?: any }) {
   const [modalAberto, setModalAberto] = useState(false);
   const [modalCotacaoAberto, setModalCotacaoAberto] = useState(false);
   const [localData, setLocalData] = useState(req);
   const [cotacaoData, setCotacaoData] = useState<any>({});
+  const [cotacaoCarregada, setCotacaoCarregada] = useState(false);
   const [fornecedoresVisiveis, setFornecedoresVisiveis] = useState(1);
-  const [userEmail, setUserEmail] = useState('Buscando...');
-  
-  const [fornecedoresBanco, setFornecedoresBanco] = useState<any[]>([]);
-  const [usuariosBanco, setUsuariosBanco] = useState<any[]>([]);
-  const [veiculosBanco, setVeiculosBanco] = useState<any[]>([]);
+  const [userEmail, setUserEmail] = useState('');
 
-  const [nomeExibicao, setNomeExibicao] = useState(req.solicitante);
-  const [veiculoExibicao, setVeiculoExibicao] = useState(req.veiculo);
+  // Usa dados compartilhados do Kanban (sem buscar do banco para cada card)
+  const fornecedoresBanco = dadosCompartilhados?.fornecedores || [];
+  const usuariosBanco = dadosCompartilhados?.usuarios || [];
+  const veiculosBanco = dadosCompartilhados?.veiculos || [];
+
+  // Traduz email->nome e código->placa usando dados locais (sem chamada ao banco)
+  const nomeExibicao = useMemo(() => {
+    if (req.solicitante && req.solicitante.includes('@')) {
+      const usuario = usuariosBanco.find((u: any) => u.email === req.solicitante.trim());
+      return usuario?.nome || req.solicitante;
+    }
+    return req.solicitante;
+  }, [req.solicitante, usuariosBanco]);
+
+  const veiculoExibicao = useMemo(() => {
+    if (req.veiculo && !isNaN(req.veiculo) && String(req.veiculo).length < 5) {
+      const vei = veiculosBanco.find((v: any) => String(v.IdPlaca) === String(req.veiculo));
+      return vei?.NumPlaca || req.veiculo;
+    }
+    return req.veiculo;
+  }, [req.veiculo, veiculosBanco]);
 
   const veioDoApp = req.obs?.includes('[APPSHEET_ID:');
 
-  // 1. BUSCA FORNECEDORES E USUÁRIOS NA TABELA DO SUPABASE PARA OS DROPDOWNS
+  // Busca email do usuário logado só quando abre o modal
   useEffect(() => {
-    const fetchData = async () => {
-      // Busca Fornecedores
-      const { data: fornecedores } = await supabase.from('Fornecedores').select('nome').order('nome');
-      if (fornecedores) setFornecedoresBanco(fornecedores);
-
-      // Busca Usuários da tabela req_usuarios
-      const { data: usuarios } = await supabase.from('req_usuarios').select('nome').order('nome');
-      if (usuarios) setUsuariosBanco(usuarios);
-
-      // Busca Veículos da tabela SupaPlacas
-      const { data: veiculos } = await supabase.from('SupaPlacas').select('IdPlaca, NumPlaca').order('NumPlaca');
-      if (veiculos) setVeiculosBanco(veiculos);
-    };
-    fetchData();
-  }, []);
-
-  // 2. LÓGICA PARA CONVERTER EMAIL EM NOME BUSCANDO NA TABELA DE USUÁRIOS
-  useEffect(() => {
-    const traduzirEmailParaNome = async () => {
-      if (req.solicitante && req.solicitante.includes('@')) {
-        const { data } = await supabase
-          .from('req_usuarios')
-          .select('nome')
-          .eq('email', req.solicitante.trim())
-          .maybeSingle();
-
-        if (data?.nome) {
-          setNomeExibicao(data.nome);
-        }
-      } else {
-        setNomeExibicao(req.solicitante);
-      }
-    };
-    traduzirEmailParaNome();
-  }, [req.solicitante]);
-
-  // 3. LÓGICA PARA CONVERTER CÓDIGO DO VEÍCULO EM PLACA (TABELA SupaPlacas)
-  useEffect(() => {
-    const traduzirCodigoVeiculo = async () => {
-      if (req.veiculo && !isNaN(req.veiculo) && String(req.veiculo).length < 5) {
-        const { data } = await supabase
-          .from('SupaPlacas')
-          .select('NumPlaca')
-          .eq('IdPlaca', req.veiculo)
-          .maybeSingle();
-
-        if (data?.NumPlaca) {
-          setVeiculoExibicao(data.NumPlaca);
-        }
-      } else {
-        setVeiculoExibicao(req.veiculo);
-      }
-    };
-    traduzirCodigoVeiculo();
-  }, [req.veiculo]);
-
-  // 4. CAPTURA AUTOMÁTICA DO EMAIL DO USUÁRIO LOGADO
-  useEffect(() => {
-    let isMounted = true;
+    if (!modalAberto || userEmail) return;
     const getUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session && isMounted) {
+        if (session) {
           const { data: { user }, error } = await supabase.auth.getUser();
-          if (error) throw error;
-          if (user?.email) {
-            setUserEmail(user.email);
-          }
-        } else if (isMounted) {
-          setUserEmail('Usuário não logado');
+          if (!error && user?.email) setUserEmail(user.email);
         }
-      } catch (err) {
-        if (err instanceof Error && err.name !== 'AbortError') {
-          console.warn("Informação de Auth:", err.message);
-        }
-      }
+      } catch (err) { /* silencioso */ }
     };
     getUser();
-    return () => { isMounted = false; };
-  }, []);
+  }, [modalAberto, userEmail]);
 
-  // 5. Sincroniza localData quando req ou traduções mudam
+  // Sincroniza localData quando req ou traduções mudam
   useEffect(() => {
     setLocalData({
       ...req,
@@ -127,9 +75,10 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
     });
   }, [req, nomeExibicao, veiculoExibicao]);
 
-  // 6. Canal realtime para cotação
+  // Busca cotação SOMENTE quando abre o modal de cotação ou o modal principal
   useEffect(() => {
-    const buscarEAssinarCotacao = async () => {
+    if ((!modalAberto && !modalCotacaoAberto) || cotacaoCarregada) return;
+    const buscarCotacao = async () => {
       const { data } = await supabase.from('req_cotacao').select('*').eq('id', req.id).single();
       if (data) {
         setCotacaoData(data);
@@ -139,19 +88,10 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
         }
         setFornecedoresVisiveis(count);
       }
+      setCotacaoCarregada(true);
     };
-    buscarEAssinarCotacao();
-
-    const channel = supabase
-      .channel(`cotacao_${req.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'req_cotacao', filter: `id=eq.${req.id}` },
-      (payload) => {
-        if (payload.new) setCotacaoData(payload.new);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [req.id]);
+    buscarCotacao();
+  }, [modalAberto, modalCotacaoAberto, cotacaoCarregada, req.id]);
 
   // 7. DATA AUTOMÁTICA PARA O FINANCEIRO
   useEffect(() => {
@@ -437,7 +377,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                       <label className={labelStyle}><UserCircle size={14}/> Colaborador Solicitante</label>
                       <select value={req.solicitante || ""} onChange={e => persist('solicitante', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar Usuário...</option>
-                        {usuariosBanco.map(u => <option key={u.nome} value={u.nome}>{u.nome}</option>)}
+                        {usuariosBanco.map((u: any) => <option key={u.nome} value={u.nome}>{u.nome}</option>)}
                       </select>
                     </div>
                     <div>
@@ -515,15 +455,11 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                         <label className={labelStyle}><Car size={14}/> Veículo / Placa</label>
                         <select
                           value={localData.veiculo || ''}
-                          onChange={e => {
-                            const selecionado = veiculosBanco.find(v => String(v.IdPlaca) === e.target.value);
-                            setVeiculoExibicao(selecionado?.NumPlaca || e.target.value);
-                            persist('veiculo', e.target.value);
-                          }}
+                          onChange={e => persist('veiculo', e.target.value)}
                           className={selectStyle}
                         >
                           <option value="">Selecione o veículo...</option>
-                          {veiculosBanco.map(v => (
+                          {veiculosBanco.map((v: any) => (
                             <option key={v.IdPlaca} value={v.IdPlaca}>{v.NumPlaca}</option>
                           ))}
                         </select>
@@ -539,7 +475,7 @@ export default function CardReq({ req, onUpdate, onPrint }: { req: any, onUpdate
                       <label className={labelStyle}><Store size={14}/> Fornecedor Vinculado</label>
                       <select value={req.fornecedor || ''} onChange={e => persist('fornecedor', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar da lista...</option>
-                        {fornecedoresBanco.map(f => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
+                        {fornecedoresBanco.map((f: any) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
                       </select>
                     </div>
                     <div><label className={labelStyle}><Receipt size={14}/> Nota Fiscal</label><input value={localData.numero_nota || ''} onChange={(e) => setLocalData({...localData, numero_nota: e.target.value})} onBlur={(e) => persist('numero_nota', e.target.value)} className={inputStyle} placeholder="Nº Documento" /></div>

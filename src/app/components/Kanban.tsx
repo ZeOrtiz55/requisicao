@@ -1,11 +1,26 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import CardReq from './CardReq';
+import { supabase } from '../lib/supabase';
 import { Search, Calendar, Building2, X, Layout } from 'lucide-react';
 
 const LISTA_FORNECEDORES_CADASTRADOS = ["Rodrigo Torneiro (Panda)"];
 
 export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
+  // Dados compartilhados - buscados UMA vez, passados para todos os cards
+  const [dadosCompartilhados, setDadosCompartilhados] = useState<{ fornecedores: any[], usuarios: any[], veiculos: any[] }>({ fornecedores: [], usuarios: [], veiculos: [] });
+
+  useEffect(() => {
+    const fetchDados = async () => {
+      const [{ data: f }, { data: u }, { data: v }] = await Promise.all([
+        supabase.from('Fornecedores').select('nome').order('nome'),
+        supabase.from('req_usuarios').select('nome, email').order('nome'),
+        supabase.from('SupaPlacas').select('IdPlaca, NumPlaca').order('NumPlaca'),
+      ]);
+      setDadosCompartilhados({ fornecedores: f || [], usuarios: u || [], veiculos: v || [] });
+    };
+    fetchDados();
+  }, []);
   const [filtroID, setFiltroID] = useState('');
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
@@ -144,11 +159,12 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
                 <div className="p-4 space-y-4 flex-1 max-h-[72vh] overflow-y-auto scrollbar-hide">
                   {items.length > 0 ? (
                     items.map((req: any) => (
-                      <CardReq 
-                        key={req.id} 
-                        req={req} 
-                        onUpdate={onUpdate} 
-                        onPrint={onPrint} 
+                      <CardReq
+                        key={req.id}
+                        req={req}
+                        onUpdate={onUpdate}
+                        onPrint={onPrint}
+                        dadosCompartilhados={dadosCompartilhados}
                       />
                     ))
                   ) : (

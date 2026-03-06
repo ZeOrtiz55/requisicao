@@ -70,11 +70,32 @@ export default function Home() {
   const carregarDados = useCallback(async (silencioso = false) => {
     if (!silencioso) setLoading(true);
     try {
-      const [resReq, resUser, resVei] = await Promise.all([
-        supabase.from('Requisicao').select('*').order('id', { ascending: false }),
+      // Busca todas as requisições (sem limite de 1000)
+      const buscarTodasReqs = async () => {
+        let todas: any[] = [];
+        let from = 0;
+        const PAGE = 1000;
+        while (true) {
+          const { data, error } = await supabase
+            .from('Requisicao')
+            .select('*')
+            .order('id', { ascending: false })
+            .range(from, from + PAGE - 1);
+          if (error || !data) break;
+          todas = todas.concat(data);
+          if (data.length < PAGE) break;
+          from += PAGE;
+        }
+        return todas;
+      };
+
+      const [allReqs, resUser, resVei] = await Promise.all([
+        buscarTodasReqs(),
         supabase.from('req_usuarios').select('*').order('nome', { ascending: true }),
         supabase.from('SupaPlacas').select('*').order('NumPlaca', { ascending: true })
       ]);
+
+      const resReq = { data: allReqs };
 
       if (resReq.data) {
         setRequisicoes(resReq.data.map(r => ({
