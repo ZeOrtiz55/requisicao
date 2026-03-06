@@ -75,55 +75,57 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
     });
   }, [requisicoes, filtroID, filtroFornecedor, filtroMes]);
 
-  const filterInputStyle = "bg-transparent text-slate-200 text-sm font-light tracking-widest border-b border-white/10 outline-none focus:border-blue-500 pb-1 transition-all placeholder:text-slate-500 appearance-none cursor-pointer";
+  const filterInputStyle = "w-full bg-slate-700/50 text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/40 transition-all placeholder:text-slate-500 appearance-none cursor-pointer border border-white/5";
 
   return (
     <div className="w-full bg-slate-800 min-h-screen transition-all duration-700 pb-20">
-      
+
       {/* BARRA DE FILTROS */}
-      <div className="w-full px-8 pt-8 pb-4">
-        <div className="max-w-3xl mx-auto bg-slate-900/80 border border-white/10 p-5 md:px-10 rounded-2xl flex flex-wrap gap-8 items-center justify-center shadow-lg">
-          
-          <div className="flex items-center gap-3">
-            <Search size={14} className="text-blue-400"/>
-            <input 
-              type="text"
-              placeholder="ID..."
-              value={filtroID}
-              onChange={e => setFiltroID(e.target.value)}
-              className={`${filterInputStyle} w-16 text-center`}
-            />
-          </div>
+      <div className="w-full px-6 pt-6 pb-4">
+        <div className="max-w-4xl mx-auto bg-slate-900/80 border border-white/10 p-4 rounded-xl">
+          <div className="grid grid-cols-[80px_1fr_1fr_auto] gap-3 items-center">
 
-          <div className="flex items-center gap-3">
-            <Building2 size={14} className="text-slate-400"/>
-            <select 
-              value={filtroFornecedor} 
-              onChange={e => setFiltroFornecedor(e.target.value)}
-              className={`${filterInputStyle} min-w-[150px]`}
-            >
-              <option value="" className="bg-slate-800">FORNECEDORES</option>
-              {fornecedoresParaFiltro.map((f: any) => <option key={f} value={f} className="bg-slate-800 uppercase">{f}</option>)}
-            </select>
-          </div>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none"/>
+              <input
+                type="text"
+                placeholder="ID"
+                value={filtroID}
+                onChange={e => setFiltroID(e.target.value)}
+                className={`${filterInputStyle} pl-9 text-center`}
+              />
+            </div>
 
-          <div className="flex items-center gap-3">
-            <Calendar size={14} className="text-slate-400"/>
-            <select 
-              value={filtroMes} 
-              onChange={e => setFiltroMes(e.target.value)}
-              className={`${filterInputStyle} min-w-[150px]`}
-            >
-              <option value="" className="bg-slate-800">PERÍODO</option>
-              {mesesDisponiveis.map((m: any) => <option key={m.valor} value={m.valor} className="bg-slate-800">{m.label.toUpperCase()}</option>)}
-            </select>
-          </div>
+            <div className="relative">
+              <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+              <select
+                value={filtroFornecedor}
+                onChange={e => setFiltroFornecedor(e.target.value)}
+                className={`${filterInputStyle} pl-9`}
+              >
+                <option value="" className="bg-slate-800">Fornecedor</option>
+                {fornecedoresParaFiltro.map((f: any) => <option key={f} value={f} className="bg-slate-800 uppercase">{f}</option>)}
+              </select>
+            </div>
 
-          {(filtroID || filtroFornecedor || filtroMes) && (
-            <button onClick={() => {setFiltroID(''); setFiltroFornecedor(''); setFiltroMes('')}} className="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">
-              <X size={12} /> LIMPAR
-            </button>
-          )}
+            <div className="relative">
+              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+              <select
+                value={filtroMes}
+                onChange={e => setFiltroMes(e.target.value)}
+                className={`${filterInputStyle} pl-9`}
+              >
+                <option value="" className="bg-slate-800">Período</option>
+                {mesesDisponiveis.map((m: any) => <option key={m.valor} value={m.valor} className="bg-slate-800">{m.label.toUpperCase()}</option>)}
+              </select>
+            </div>
+
+            {(filtroID || filtroFornecedor || filtroMes) ? (
+              <button onClick={() => {setFiltroID(''); setFiltroFornecedor(''); setFiltroMes('')}} className="h-full px-4 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-bold uppercase tracking-wide transition-colors flex items-center gap-2">
+                <X size={14} /> Limpar
+              </button>
+            ) : <div />}
+          </div>
         </div>
       </div>
 
