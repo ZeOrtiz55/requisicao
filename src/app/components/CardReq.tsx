@@ -66,14 +66,14 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
   }, [modalAberto, userEmail]);
 
   // Sincroniza localData quando req ou traduções mudam
+  // veiculo mantém o IdPlaca original (não traduz para nome) para o select funcionar
   useEffect(() => {
     setLocalData({
       ...req,
       solicitante: nomeExibicao || req.solicitante,
-      veiculo: veiculoExibicao || req.veiculo,
       quem_ferramenta: req.quem_ferramenta || req.ferramenta_quem || ""
     });
-  }, [req, nomeExibicao, veiculoExibicao]);
+  }, [req, nomeExibicao]);
 
   // Busca cotação SOMENTE quando abre o modal de cotação ou o modal principal
   useEffect(() => {
@@ -388,13 +388,13 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                       <div>
                         <label className={labelStyle}><Car size={14}/> Veículo / Placa</label>
                         <select
-                          value={localData.veiculo || ''}
+                          value={String(localData.veiculo || '')}
                           onChange={e => persist('veiculo', e.target.value)}
                           className={selectStyle}
                         >
                           <option value="">Selecione o veículo...</option>
                           {veiculosBanco.map((v: any) => (
-                            <option key={v.IdPlaca} value={v.IdPlaca}>{v.NumPlaca}</option>
+                            <option key={v.IdPlaca} value={String(v.IdPlaca)}>{v.NumPlaca}</option>
                           ))}
                         </select>
                       </div>
