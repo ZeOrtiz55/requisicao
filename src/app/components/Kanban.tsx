@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import CardReq from './CardReq';
+import CardCapaReq from './CardCapaReq';
 import { supabase } from '../lib/supabase';
 import { Search, Calendar, Building2, X, Layout } from 'lucide-react';
 
@@ -162,7 +162,7 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
                   {items.length > 0 ? (
                     <>
                       {items.slice(0, limitesPorColuna[col.id] || CARDS_POR_VEZ).map((req: any) => (
-                        <CardReq
+                        <CardCapaReq
                           key={req.id}
                           req={req}
                           onUpdate={onUpdate}
