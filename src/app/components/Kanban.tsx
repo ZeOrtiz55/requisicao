@@ -25,6 +25,8 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
   const [colunaArrastando, setColunaArrastando] = useState<string | null>(null);
+  const [limitesPorColuna, setLimitesPorColuna] = useState<Record<string, number>>({});
+  const CARDS_POR_VEZ = 20;
 
   const colunas = [
     { id: 'pedido', titulo: 'Pedido Realizado', cor: 'bg-blue-500' },
@@ -158,15 +160,25 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
                 {/* ÁREA DOS CARDS */}
                 <div className="p-4 space-y-4 flex-1 max-h-[72vh] overflow-y-auto scrollbar-hide">
                   {items.length > 0 ? (
-                    items.map((req: any) => (
-                      <CardReq
-                        key={req.id}
-                        req={req}
-                        onUpdate={onUpdate}
-                        onPrint={onPrint}
-                        dadosCompartilhados={dadosCompartilhados}
-                      />
-                    ))
+                    <>
+                      {items.slice(0, limitesPorColuna[col.id] || CARDS_POR_VEZ).map((req: any) => (
+                        <CardReq
+                          key={req.id}
+                          req={req}
+                          onUpdate={onUpdate}
+                          onPrint={onPrint}
+                          dadosCompartilhados={dadosCompartilhados}
+                        />
+                      ))}
+                      {items.length > (limitesPorColuna[col.id] || CARDS_POR_VEZ) && (
+                        <button
+                          onClick={() => setLimitesPorColuna(prev => ({ ...prev, [col.id]: (prev[col.id] || CARDS_POR_VEZ) + CARDS_POR_VEZ }))}
+                          className="w-full py-4 rounded-2xl border border-dashed border-white/10 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all"
+                        >
+                          Carregar mais ({items.length - (limitesPorColuna[col.id] || CARDS_POR_VEZ)} restantes)
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <div className="py-12 border border-dashed border-white/5 rounded-3xl flex flex-col items-center justify-center gap-2 opacity-10">
                       <Layout size={18} className="text-white" />

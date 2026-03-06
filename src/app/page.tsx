@@ -1,6 +1,6 @@
 'use client';
 export const dynamic = 'force-dynamic';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from './lib/supabase';
 import Kanban from './components/Kanban';
 import FormReq from './components/FormReq';
@@ -29,6 +29,8 @@ export default function Home() {
 
   // ESTADO PARA COMUNICAR ABERTURA DE CARD AO KANBAN
   const [idDestaque, setIdDestaque] = useState<any>(null);
+
+  const lixeiraCount = useMemo(() => requisicoes.filter(r => r.status === 'lixeira').length, [requisicoes]);
 
   const dispararImpressao = (dados: any) => {
     setReqParaImprimir(dados);
@@ -308,9 +310,9 @@ export default function Home() {
             {abaAtiva === 'lixeira' && <div className="absolute left-0 w-1 h-6 bg-red-500 rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.5)]" />}
             <div className="relative">
               <Trash2 size={20} />
-              {requisicoes.filter(r => r.status === 'lixeira').length > 0 && (
+              {lixeiraCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center">
-                  {requisicoes.filter(r => r.status === 'lixeira').length}
+                  {lixeiraCount}
                 </span>
               )}
             </div>
