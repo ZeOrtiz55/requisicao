@@ -103,7 +103,6 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
   }, [req.status, req.enviado_financeiro_data, req.id, onUpdate]);
 
   const persist = (name: string, value: any) => {
-    if (req[name] === value) return;
     setLocalData((prev: any) => ({ ...prev, [name]: value }));
     onUpdate(req.id, { [name]: value });
   };
@@ -303,21 +302,21 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                   <div className="space-y-8">
                     <div>
                       <label className={labelStyle}><Layers size={14}/> Tipo de Requisição</label>
-                      <select value={req.tipo || req.ReqTipo || ""} onChange={e => persist('tipo', e.target.value)} className={selectStyle}>
+                      <select value={localData.tipo || ""} onChange={e => persist('tipo', e.target.value)} className={selectStyle}>
                         <option value="">Definir tipo...</option>
                         {TIPOS_REQ.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={labelStyle}><UserCircle size={14}/> Colaborador Solicitante</label>
-                      <select value={req.solicitante || ""} onChange={e => persist('solicitante', e.target.value)} className={selectStyle}>
+                      <select value={localData.solicitante || ""} onChange={e => persist('solicitante', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar Usuário...</option>
                         {usuariosBanco.map((u: any) => <option key={u.nome} value={u.nome}>{u.nome}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={labelStyle}><Building2 size={14}/> Setor Destino</label>
-                      <select value={req.setor || req.ReqQuem || ""} onChange={e => persist('setor', e.target.value)} className={selectStyle}>
+                      <select value={localData.setor || ""} onChange={e => persist('setor', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar Setor...</option>
                         {DEPARTAMENTOS.map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
@@ -367,7 +366,7 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                   </div>
                 )}
 
-                {(localData.tipo === 'Ferramenta' || req.tipo === 'Ferramenta' || req.ReqTipo === 'Ferramenta') && (
+                {localData.tipo === 'Ferramenta' && (
                   <div className={`${bentoStyle} !bg-blue-500/10 !border-blue-500/20`}>
                     <div className="space-y-8 uppercase">
                       <h4 className="text-xs font-black text-blue-400 tracking-[0.3em] mb-4">Destinação da Ferramenta</h4>
@@ -383,7 +382,7 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                   </div>
                 )}
 
-                {(req.tipo === 'Frota-Veículos' || req.ReqTipo === 'Frota-Veículos') && (
+                {localData.tipo === 'Frota-Veículos' && (
                   <div className={`${bentoStyle} !bg-blue-500/10 !border-blue-500/20`}>
                     <div className="space-y-8 uppercase">
                       <div>
@@ -408,7 +407,7 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                   <div className="space-y-8">
                     <div>
                       <label className={labelStyle}><Store size={14}/> Fornecedor Vinculado</label>
-                      <select value={req.fornecedor || ''} onChange={e => persist('fornecedor', e.target.value)} className={selectStyle}>
+                      <select value={localData.fornecedor || ''} onChange={e => persist('fornecedor', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar da lista...</option>
                         {fornecedoresBanco.map((f: any) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
                       </select>
@@ -426,19 +425,19 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                   <label className={labelStyle}><Paperclip size={14}/> Documentação anexada</label>
                   <div className="space-y-4 mt-6">
                     {[{ label: 'Nota Fiscal', field: 'foto_nf', icon: <Camera size={16}/> }, { label: 'Boleto', field: 'boleto_fornecedor', icon: <Receipt size={16}/> }, { label: 'Recibo / Outros', field: 'recibo_fornecedor', icon: <Paperclip size={16}/> }].map((item) => {
-                      const fileUrl = getUrlAnexo(req[item.field]);
-                      const isDriveFile = req[item.field]?.startsWith('SupaAtualizarReq_Images/');
+                      const fileUrl = getUrlAnexo(localData[item.field]);
+                      const isDriveFile = localData[item.field]?.startsWith('SupaAtualizarReq_Images/');
                       return (
                         <div key={item.field} className="flex items-center gap-2">
                           <label className="flex-1 flex items-center justify-between p-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer transition-all group">
                             <div className="flex items-center gap-4"><div className="text-slate-500 group-hover:text-blue-400">{item.icon}</div><span className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{item.label}</span></div>
                             <input type="file" className="hidden" onChange={e => handleFileUpload(e, item.field)} />
-                            {req[item.field] ? <div className="w-2 h-2 rounded-full bg-green-500 "></div> : <ArrowRight size={14} className="text-slate-200"/>}
+                            {localData[item.field] ? <div className="w-2 h-2 rounded-full bg-green-500"></div> : <ArrowRight size={14} className="text-slate-200"/>}
                           </label>
-                          {req[item.field] && (
+                          {localData[item.field] && (
                             isDriveFile ? (
                               <button
-                                onClick={() => abrirArquivoDrive(req[item.field])}
+                                onClick={() => abrirArquivoDrive(localData[item.field])}
                                 className="w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg bg-green-600 hover:bg-green-700  cursor-pointer"
                                 title="Abrir no Google Drive"
                               >
