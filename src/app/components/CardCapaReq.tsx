@@ -61,7 +61,7 @@ export default function CardCapaReq({ req, onUpdate, onPrint, dadosCompartilhado
         <button onClick={handleTrash} className="absolute bottom-6 right-6 p-3 rounded-xl bg-white/10 text-slate-400 hover:bg-red-600 hover:text-white transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
 
         <div className="flex items-start gap-4 mb-5 mt-2">
-          <div className={`min-w-[50px] h-[50px] rounded-2xl flex items-center justify-center text-white shadow-lg ${veioDoApp ? 'bg-blue-600 shadow-blue-500/20' : 'bg-slate-900 shadow-slate-400'}`}>
+          <div className={`min-w-[50px] h-[50px] rounded-xl flex items-center justify-center ${veioDoApp ? 'bg-blue-500/15 text-blue-400' : 'bg-white/5 text-slate-400'}`}>
             <span className="text-lg font-light tracking-tighter">{req.id}</span>
           </div>
           <div className="flex flex-col gap-1">

@@ -280,7 +280,7 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
 
             <div className="sticky top-0 bg-slate-800/95 backdrop-blur-md px-10 py-8 border-b border-white/5 flex justify-between items-center z-10">
               <div className="flex items-center gap-8">
-                <div className={`w-16 h-16 rounded-2xl text-white flex items-center justify-center font-light text-2xl ${veioDoApp ? 'bg-blue-600' : 'bg-slate-900'}`}>{req.id}</div>
+                <div className={`w-16 h-16 rounded-xl flex items-center justify-center font-light text-2xl ${veioDoApp ? 'bg-blue-500/15 text-blue-400' : 'bg-white/5 text-slate-400'}`}>{req.id}</div>
                 <div><div className="flex items-center gap-3"><h2 className="text-2xl font-light text-white tracking-tight leading-none uppercase">Ficha Técnica</h2>{veioDoApp && <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-lg font-black">TÉCNICO (APP)</span>}</div><p className="text-xs font-normal text-slate-500 uppercase tracking-[0.3em] mt-1">Gestão de Suprimentos</p></div>
               </div>
               <button onClick={fecharModal} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:bg-red-500 hover:text-white transition-all transform hover:rotate-90"><X size={22}/></button>
@@ -433,13 +433,13 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                           <label className="flex-1 flex items-center justify-between p-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer transition-all group">
                             <div className="flex items-center gap-4"><div className="text-slate-500 group-hover:text-blue-400">{item.icon}</div><span className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{item.label}</span></div>
                             <input type="file" className="hidden" onChange={e => handleFileUpload(e, item.field)} />
-                            {req[item.field] ? <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div> : <ArrowRight size={14} className="text-slate-200"/>}
+                            {req[item.field] ? <div className="w-2 h-2 rounded-full bg-green-500 "></div> : <ArrowRight size={14} className="text-slate-200"/>}
                           </label>
                           {req[item.field] && (
                             isDriveFile ? (
                               <button
                                 onClick={() => abrirArquivoDrive(req[item.field])}
-                                className="w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg bg-green-600 hover:bg-green-700 shadow-green-900/20 cursor-pointer"
+                                className="w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg bg-green-600 hover:bg-green-700  cursor-pointer"
                                 title="Abrir no Google Drive"
                               >
                                 <ExternalLink size={18} />
@@ -449,7 +449,7 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                                 href={fileUrl || '#'}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg bg-blue-600 hover:bg-blue-700 shadow-blue-900/20"
+                                className="w-14 h-16 flex items-center justify-center rounded-2xl text-white transition-all shadow-lg bg-blue-600 hover:bg-blue-700 "
                                 title="Visualizar Arquivo"
                               >
                                 <Eye size={18} />

@@ -277,7 +277,7 @@ export default function Home() {
         
         <nav className="flex-1 space-y-2 mt-4">
           <button onClick={() => setAbaAtiva('kanban')} className={menuItemStyle('kanban')}>
-            {abaAtiva === 'kanban' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            {abaAtiva === 'kanban' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full " />}
             <LayoutDashboard size={20} />
             <span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Kanban</span>
           </button>
@@ -289,25 +289,25 @@ export default function Home() {
           </button>
 
           <button onClick={() => setAbaAtiva('usuarios')} className={menuItemStyle('usuarios')}>
-            {abaAtiva === 'usuarios' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            {abaAtiva === 'usuarios' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full " />}
             <UserCircle size={20} />
             <span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Usuários</span>
           </button>
 
           <button onClick={() => setAbaAtiva('veiculos')} className={menuItemStyle('veiculos')}>
-            {abaAtiva === 'veiculos' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            {abaAtiva === 'veiculos' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full " />}
             <Car size={20} />
             <span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Veículos</span>
           </button>
 
           <button onClick={() => setAbaAtiva('fornecedores')} className={menuItemStyle('fornecedores')}>
-            {abaAtiva === 'fornecedores' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            {abaAtiva === 'fornecedores' && <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full " />}
             <Users2 size={20} />
             <span className={`text-xs font-bold uppercase tracking-widest ${menuAberto ? 'opacity-100' : 'opacity-0'}`}>Forn.</span>
           </button>
 
           <button onClick={() => setAbaAtiva('lixeira')} className={menuItemStyle('lixeira')}>
-            {abaAtiva === 'lixeira' && <div className="absolute left-0 w-1 h-6 bg-red-500 rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.5)]" />}
+            {abaAtiva === 'lixeira' && <div className="absolute left-0 w-1 h-6 bg-red-500 rounded-r-full " />}
             <div className="relative">
               <Trash2 size={20} />
               {lixeiraCount > 0 && (
@@ -348,13 +348,13 @@ export default function Home() {
             )}
             {abaAtiva === 'usuarios' && (
               <div className="max-w-6xl mx-auto py-20 px-10">
-                <div className="flex justify-between items-end mb-12"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-white">Colaboradores</h2><p className="text-slate-500 font-bold uppercase text-xs tracking-[0.3em]">Gestão de acesso técnica</p></div><button onClick={() => { setUsuarioEditando(null); setAbaAtiva('form_usuario'); }} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-xl transition-all shadow-blue-900/20"><UserPlus size={20} /> Cadastrar Novo</button></div>
+                <div className="flex justify-between items-end mb-12"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-white">Colaboradores</h2><p className="text-slate-500 font-bold uppercase text-xs tracking-[0.3em]">Gestão de acesso técnica</p></div><button onClick={() => { setUsuarioEditando(null); setAbaAtiva('form_usuario'); }} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-xl transition-all "><UserPlus size={20} /> Cadastrar Novo</button></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{usuarios.map(u => (<div key={u.id} className="bg-slate-900/50 border border-white/5 p-8 rounded-2xl hover:border-blue-500/50 transition-all group"><div className="flex justify-between items-start mb-6"><div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-blue-400 transition-colors"><UserCircle size={24} /></div><button onClick={() => { setUsuarioEditando(u); setAbaAtiva('form_usuario'); }} className="p-2 text-slate-600 hover:text-white transition-colors"><Edit3 size={18} /></button></div><h3 className="text-lg font-bold text-white mb-1">{u.nome}</h3><p className="text-xs text-slate-500 mb-4">{u.email}</p><div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-widest"><Phone size={12} /> {u.telefone || 'Sem Telefone'}</div></div>))}</div>
               </div>
             )}
             {abaAtiva === 'veiculos' && (
               <div className="max-w-6xl mx-auto py-20 px-10">
-                <div className="flex justify-between items-end mb-12"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-white">Frota</h2><p className="text-slate-500 font-bold uppercase text-xs tracking-[0.3em]">Gestão de veículos cadastrados</p></div><button onClick={() => { setVeiculoEditando(null); setAbaAtiva('form_veiculo'); }} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-xl transition-all shadow-blue-900/20"><Plus size={20} /> Cadastrar Veículo</button></div>
+                <div className="flex justify-between items-end mb-12"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-white">Frota</h2><p className="text-slate-500 font-bold uppercase text-xs tracking-[0.3em]">Gestão de veículos cadastrados</p></div><button onClick={() => { setVeiculoEditando(null); setAbaAtiva('form_veiculo'); }} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-xl transition-all "><Plus size={20} /> Cadastrar Veículo</button></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">{veiculos.map(v => (<div key={v.IdPlaca} className="bg-slate-900/50 border border-white/5 p-6 rounded-2xl hover:border-blue-500/50 transition-all group flex justify-between items-center"><div><p className="text-xs font-black text-blue-500 uppercase tracking-widest mb-1">PLACA</p><h3 className="text-base font-bold text-white uppercase">{v.NumPlaca}</h3></div><button onClick={() => { setVeiculoEditando(v); setAbaAtiva('form_veiculo'); }} className="p-2 text-slate-600 hover:text-white transition-colors"><Edit3 size={16} /></button></div>))}</div>
               </div>
             )}
@@ -393,7 +393,7 @@ export default function Home() {
                     {requisicoes.filter(r => r.status === 'lixeira').map(r => (
                       <div key={r.id} className="bg-slate-900/50 border border-white/5 rounded-2xl p-7 flex flex-col gap-5 hover:border-red-500/30 transition-all group">
                         <div className="flex items-start gap-4">
-                          <div className="min-w-[44px] h-[44px] rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 font-light text-lg shadow-inner">
+                          <div className="min-w-[44px] h-[44px] rounded-xl bg-white/5 flex items-center justify-center text-slate-400 font-light text-lg">
                             {r.id}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -440,7 +440,7 @@ export default function Home() {
         )}
       </section>
 
-      <button onClick={() => setAbaAtiva(abaAtiva === 'form' ? 'kanban' : 'form')} className={`fixed bottom-10 right-10 w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-[110] transition-all shadow-blue-900/40 print:hidden ${abaAtiva === 'form' ? 'rotate-45 bg-red-500 shadow-red-900/40' : ''}`}><Plus size={32} /></button>
+      <button onClick={() => setAbaAtiva(abaAtiva === 'form' ? 'kanban' : 'form')} className={`fixed bottom-10 right-10 w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg z-[110] transition-all print:hidden ${abaAtiva === 'form' ? 'rotate-45 bg-red-500' : ''}`}><Plus size={32} /></button>
       
       {abaAtiva === 'form' && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 print:hidden">
