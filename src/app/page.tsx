@@ -179,19 +179,28 @@ export default function Home() {
             });
           }, 3500);
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Supa-AtualizarReq' }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Supa-AtualizarReq' }, async (payload) => {
           tocarAlerta();
-          const info = { 
-            id: Date.now(), 
-            idOriginal: payload.new.ReqREF,
-            titulo: "Card Sincronizado", 
-            solicitante: "Técnico (APP)", 
-            tipoNotif: "Card Atualizado!", 
-            hora: new Date().toLocaleTimeString() 
+          const novo = payload.new;
+          const info = {
+            id: Date.now(),
+            idOriginal: novo.ReqREF,
+            titulo: "Card Sincronizado",
+            solicitante: "Técnico (APP)",
+            tipoNotif: "Card Atualizado!",
+            hora: new Date().toLocaleTimeString()
           };
           setToasts(prev => [info, ...prev]);
           setNotificacoes(prev => [info, ...prev]);
           setContadorNotif(prev => prev + 1);
+
+          // Salva foto do técnico no campo recibo_fornecedor
+          if (novo.ReqFotoNota && novo.ReqREF) {
+            await supabase.from('Requisicao')
+              .update({ recibo_fornecedor: novo.ReqFotoNota })
+              .eq('id', novo.ReqREF);
+          }
+
           carregarDados(true);
           setTimeout(() => carregarDados(true), 2500);
           setTimeout(() => setToasts(prev => prev.filter(t => t.id !== info.id)), 10000);
