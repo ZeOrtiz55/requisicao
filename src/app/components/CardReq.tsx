@@ -55,12 +55,9 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
     if (!modalAberto || userEmail) return;
     const getUser = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const { data: { user }, error } = await supabase.auth.getUser();
-          if (!error && user?.email) setUserEmail(user.email);
-        }
-      } catch (err) { /* silencioso */ }
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!error && user?.email) setUserEmail(user.email);
+      } catch (err) { /* sem sessão ativa - ignora */ }
     };
     getUser();
   }, [modalAberto, userEmail]);
@@ -205,7 +202,6 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
         impresso_por: userEmail 
     };
     onPrint(dadosParaImpressao);
-    if (req.status === 'pedido') persist('status', 'aguardando');
   };
 
   const handleTrash = (e: React.MouseEvent) => {
@@ -409,7 +405,7 @@ export default function CardReq({ req, onUpdate, onPrint, dadosCompartilhados, a
                       <label className={labelStyle}><Store size={14}/> Fornecedor Vinculado</label>
                       <select value={localData.fornecedor || ''} onChange={e => persist('fornecedor', e.target.value)} className={selectStyle}>
                         <option value="">Selecionar da lista...</option>
-                        {fornecedoresBanco.map((f: any) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
+                        {fornecedoresBanco.map((f: any, i: number) => <option key={`${f.nome}-${i}`} value={f.nome}>{f.nome}</option>)}
                       </select>
                     </div>
                     <div><label className={labelStyle}><Receipt size={14}/> Nota Fiscal</label><input value={localData.numero_nota || ''} onChange={(e) => setLocalData({...localData, numero_nota: e.target.value})} onBlur={(e) => persist('numero_nota', e.target.value)} className={inputStyle} placeholder="Nº Documento" /></div>

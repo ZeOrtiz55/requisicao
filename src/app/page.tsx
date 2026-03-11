@@ -143,20 +143,28 @@ export default function Home() {
           setTimeout(() => carregarDados(true), 2500);
           setTimeout(() => setToasts(prev => prev.filter(t => t.id !== info.id)), 10000);
 
-          // Aguarda o banco processar e busca o ID real da tabela Requisicao + nome do solicitante
-          setTimeout(async () => {
-            const { data: reqData } = await supabase
-              .from('Requisicao')
-              .select('*')
-              .ilike('obs', `%[APPSHEET_ID:${nova.IdReq}]%`)
-              .maybeSingle();
+          // Busca o ID real da Requisicao com retries (o trigger pode demorar)
+          const buscarEImprimir = async () => {
+            let reqData = null;
+            const tentativas = [3000, 5000, 8000, 12000];
+            for (const espera of tentativas) {
+              await new Promise(r => setTimeout(r, espera === 3000 ? espera : espera - tentativas[tentativas.indexOf(espera) - 1]));
+              const { data } = await supabase
+                .from('Requisicao')
+                .select('*')
+                .ilike('obs', `%[APPSHEET_ID:${nova.IdReq}]%`)
+                .maybeSingle();
+              if (data?.id) { reqData = data; break; }
+            }
 
+            // Traduz email → nome do colaborador
             let nomeExibicao = nova.ReqEmail || "Técnico";
             if (nova.ReqEmail?.includes('@')) {
+              const emailLimpo = nova.ReqEmail.trim().toLowerCase();
               const { data: userData } = await supabase
                 .from('req_usuarios')
                 .select('nome')
-                .eq('email', nova.ReqEmail.trim())
+                .ilike('email', emailLimpo)
                 .maybeSingle();
               if (userData?.nome) nomeExibicao = userData.nome;
             }
@@ -177,7 +185,8 @@ export default function Home() {
               quem_ferramenta: nova.ferramenta_quem || "",
               created_at: reqData?.created_at,
             });
-          }, 3500);
+          };
+          buscarEImprimir();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Supa-AtualizarReq' }, async (payload) => {
           tocarAlerta();

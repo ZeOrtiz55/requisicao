@@ -35,7 +35,6 @@ export default function CardCapaReq({ req, onUpdate, onPrint, dadosCompartilhado
   const handlePrintClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onPrint({ ...req, solicitante: nomeExibicao, impresso_por: 'MANUAL' });
-    if (req.status === 'pedido') onUpdate(req.id, { status: 'aguardando' });
   };
 
   return (
