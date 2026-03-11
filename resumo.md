@@ -14,6 +14,11 @@ app-requisicoes/
 ├── postcss.config.mjs
 ├── eslint.config.mjs
 ├── DOCUMENTACAO.md
+├── resumo.md                         ← Este arquivo
+├── sync-pipefy.mjs                   ← Script de sincronização Pipefy → Supabase
+├── migrar-anexos.mjs                 ← Script de migração de anexos Pipefy → Storage
+├── pipefy-dump.json                  ← Dump completo dos 1320 cards do Pipefy
+├── sync-report.json                  ← Relatório de 29 registros atualizados
 ├── src/app/
 │   ├── page.tsx                    (Página principal — estado global, menu, realtime)
 │   ├── layout.tsx                  (Layout Next.js — fonte Montserrat)
@@ -169,9 +174,15 @@ Gerencia todo o estado global do sistema:
 
 ### Realtime (Supabase Channels)
 Canal `main-realtime-stream`:
-1. **INSERT em `Supa-Solicitacao_Req`**: alerta sonoro, toast, notificação, recarrega dados (+ reload extra após 2.5s), após 3.5s busca ID real e dispara impressão automática
+1. **INSERT em `Supa-Solicitacao_Req`**: alerta sonoro, toast, notificação, recarrega dados (+ reload extra após 2.5s), após busca ID real com retry e dispara impressão automática
 2. **INSERT em `Supa-AtualizarReq`**: alerta, toast, salva foto do técnico no campo `recibo_fornecedor`, recarrega dados
 3. **Qualquer evento em `Requisicao`**: recarrega dados silenciosamente
+
+### Auto-print AppSheet (CORRIGIDO em 11/03/2026)
+- **Antes**: esperava 3.5s fixos, usava AppSheet ID no template, mostrava email ao invés do nome
+- **Agora**: retry com tentativas em 3s, 5s, 8s, 12s para buscar o ID real da tabela `Requisicao`
+- Busca nome do usuário via `.ilike()` (case-insensitive) na tabela `req_usuarios`
+- Se não encontrar ID real após 4 tentativas, usa fallback com os dados do AppSheet
 
 ### Lixeira
 - Grid de cards excluídos com opção de restaurar (volta para `pedido`) ou excluir permanentemente
@@ -182,7 +193,7 @@ Canal `main-realtime-stream`:
 - `salvarVeiculo`: insert ou update em `SupaPlacas`
 
 ```tsx
-// Código completo: 463 linhas
+// Código completo: ~463 linhas
 // Imports: React hooks, supabase, todos os componentes, lucide-react icons
 // Estado global centralizado no componente Home()
 ```
@@ -223,10 +234,11 @@ Card compacto exibido no Kanban (componente leve):
 - Botões hover: Cotação, Imprimir, Lixeira
 - **Lazy load**: importa `CardReq` via `next/dynamic` apenas quando abre o modal
 - Draggable (HTML5 drag-and-drop)
+- **REMOVIDO em 11/03/2026**: auto-status change de `pedido` → `aguardando` ao imprimir
 
 ```tsx
 // Props: { req, onUpdate, onPrint, dadosCompartilhados }
-// 122 linhas
+// ~120 linhas
 ```
 
 ---
@@ -248,8 +260,13 @@ Modal completo de edição de uma requisição:
 - **Upload de arquivos**: NF, Boleto, Recibo → Supabase Storage bucket `requisicoes`
   - Upload de NF muda status para `completa`
 - **Visualização de anexos**: Storage (link direto) ou Google Drive (via Apps Script JSONP)
-- **Impressão**: gera PDF e muda status de `pedido` para `aguardando`
+- **Impressão**: gera PDF (NÃO muda mais o status)
 - **Data financeiro**: seta automaticamente `enviado_financeiro_data` quando status é `financeiro`
+
+### Correções aplicadas em 11/03/2026
+1. **Removido auto-status change** de `pedido` → `aguardando` ao imprimir
+2. **Fix AuthApiError "Invalid Refresh Token"**: removido `getSession()`, usa `getUser()` direto
+3. **Fix React duplicate key**: fornecedores usam `key={f.nome}-${i}` com index
 
 ### Integração Google Drive
 - URL Apps Script hardcoded na linha 15
@@ -259,7 +276,7 @@ Modal completo de edição de uma requisição:
 ```tsx
 // Props: { req, onUpdate, onPrint, dadosCompartilhados, aberto?, onFechar? }
 // Constantes: APPS_SCRIPT_URL, DEPARTAMENTOS, TIPOS_REQ
-// 475 linhas
+// ~475 linhas
 ```
 
 ---
@@ -328,13 +345,8 @@ Template A4 para impressão via `window.print()`:
 
 Template de impressão antigo, substituído pelo `TemplatePDF.tsx`. Não é importado em nenhum lugar.
 
-Diferenças do atual:
-- Não busca cotação do banco
-- Não traduz email→nome nem código→placa via Supabase
-- Layout ligeiramente diferente (campos de assinatura fixos, valor em fundo preto)
-
 ```tsx
-// 217 linhas — arquivo legado
+// 217 linhas — arquivo legado, pode ser removido
 ```
 
 ---
@@ -343,12 +355,12 @@ Diferenças do atual:
 
 CRUD completo de fornecedores:
 
-### Funcionalidades
 - **Criar**: formulário com nome, cpf/cnpj, número (contato), descrição
 - **Editar**: preenche formulário e faz update via Supabase
 - **Excluir**: delete com confirm()
 - **Listar**: grid de cards com filtro em tempo real (nome ou cpf/cnpj)
 - Todos os campos convertidos para maiúsculas
+- **Obs**: Existe fornecedor duplicado no banco ("ALEX PEÇAS, SERVIÇOS E MANGUEIRAS") — tratado com index no key
 
 ```tsx
 // Props: { onSave }
@@ -422,7 +434,8 @@ fornecedor1..5, servico_material1..5, valor1..5, obs1..5
 
 ### Storage
 - Bucket: `requisicoes`
-- Nomenclatura: `{req.id}-{fieldName}-{timestamp}.{ext}`
+- Nomenclatura uploads manuais: `{req.id}-{fieldName}-{timestamp}.{ext}`
+- Nomenclatura migrados: `migrado-{reqId}-{fieldName}.{ext}`
 
 ---
 
@@ -437,9 +450,9 @@ pedido  →  aguardando  →  financeiro
 ```
 
 ### Regras automáticas
-- Imprimir card com status `pedido` → muda para `aguardando`
 - Upload de Nota Fiscal (`foto_nf`) → muda para `completa`
 - Mover para `financeiro` → registra `enviado_financeiro_data`
+- **REMOVIDO**: Imprimir NÃO muda mais o status automaticamente
 
 ---
 
@@ -477,7 +490,71 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 
 ---
 
-## 22. Pontos de Atenção / Dívida Técnica
+## 22. Scripts de Migração e Sincronização
+
+### sync-pipefy.mjs
+Script que sincroniza dados do Pipefy com o Supabase. Acessa a API GraphQL do Pipefy, busca todos os cards (1320 total) de todas as fases do pipe, e cruza com registros migrados no Supabase (identificados por `[MIGRADO_ID:xxx]` no campo `obs`).
+
+- **Pipe ID**: 305638515
+- **Fases**: Pedidos, Aguardando-NF ou Aprovar, Veiculos-Add no Rota Exata, Custo-Cobrado Cliente, Despesa-Concluida, FERRAMENTAS ESTOQUE, Negadas
+- **Campos sincronizados**: fornecedor, numero_nota, valor_despeza, valor_cobrado_cliente, recibo_fornecedor (anexos)
+- **Flags**: `--dry-run`, `--use-cache` (usa pipefy-dump.json)
+- **Normalização**: MAPA_SOLICITANTES e MAPA_FORNECEDORES para padronizar nomes
+- **Resultado**: 29 registros atualizados (12 valores, 16 recibos, 1 valor cobrado)
+
+### migrar-anexos.mjs
+Migra anexos (fotos de NF) do Pipefy para o Supabase Storage. As URLs do Pipefy são assinadas e expiram (~6h), então o script busca URLs frescas via API antes de baixar.
+
+- **Processo**: busca registros com URL do Pipefy no `foto_nf` → extrai `[MIGRADO_ID:xxx]` → chama API `card(id) { attachments { url path } }` → baixa arquivo → sobe no Storage
+- **Bucket**: `requisicoes`
+- **Nomenclatura**: `migrado-{reqId}-{fieldName}.{ext}`
+- **Rate limit**: 500ms pausa a cada 5 requests
+- **Resultado**: 294/295 sucesso, 1 falha (Req #5134 Bad Request)
+- **Erros salvos em**: `anexos-erros.json`
+
+### Arquivos gerados
+- `pipefy-dump.json` — Dump completo de 1320 cards com todos os campos e anexos
+- `sync-report.json` — Relatório de 29 registros atualizados pelo sync
+- `anexos-erros.json` — 1 erro (Req #5134)
+
+---
+
+## 23. Correções Aplicadas (Sessão 11/03/2026)
+
+### Bug: AppSheet auto-print mostrando ID errado e email
+- **Problema**: Ao imprimir requisição vinda do AppSheet, o template usava o ID do AppSheet ao invés do ID real da tabela `Requisicao`, e mostrava email ao invés do nome do solicitante
+- **Arquivo**: `src/app/page.tsx`
+- **Fix**: Implementado retry logic (tentativas em 3s, 5s, 8s, 12s) para buscar ID real. Busca nome do usuário com `.ilike()` (case-insensitive)
+
+### Bug: Auto-status change ao imprimir
+- **Problema**: Imprimir uma requisição mudava automaticamente o status de `pedido` para `aguardando`, causando confusão no workflow
+- **Arquivos**: `CardReq.tsx` e `CardCapaReq.tsx`
+- **Fix**: Removida a lógica `if (req.status === 'pedido') persist('status', 'aguardando')` de ambos os componentes
+
+### Bug: AuthApiError "Invalid Refresh Token"
+- **Problema**: Console exibia `AuthApiError: Invalid Refresh Token: Refresh Token Not Found` ao abrir o modal
+- **Arquivo**: `CardReq.tsx`
+- **Fix**: Removido `getSession()` que lia token expirado do localStorage. Substituído por `getUser()` direto com try/catch
+
+### Bug: React duplicate key em fornecedores
+- **Problema**: Fornecedor "ALEX PEÇAS, SERVIÇOS E MANGUEIRAS" duplicado no banco causava erro de key duplicada no React
+- **Arquivo**: `CardReq.tsx`
+- **Fix**: Key do option usa index: `key={f.nome}-${i}`
+
+---
+
+## 24. Integração Pipefy (Referência)
+
+- **API**: `https://api.pipefy.com/graphql`
+- **Pipe ID**: 305638515
+- **Acesso a cards**: via `phase(id) { cards }` (não `pipe { cards }`)
+- **Anexos**: via `card(id) { attachments { url path } }`
+- **URLs de anexo**: são assinadas e expiram (~6h) — sempre buscar fresca via API antes de baixar
+- **Registros migrados**: identificados por `[MIGRADO_ID:xxx]` no campo `obs` da tabela `Requisicao`
+
+---
+
+## 25. Pontos de Atenção / Dívida Técnica
 
 | Item | Local | Observação |
 |---|---|---|
@@ -487,7 +564,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 | Duplo carregamento realtime | page.tsx | Faz reload + outro após 2.5s |
 | PrintTemplate.tsx não usado | components/ | Arquivo legado, pode ser removido |
 | `pg` no package.json | Raiz | Dependência não usada no código atual |
+| Fornecedor duplicado no banco | Fornecedores | "ALEX PEÇAS..." aparece 2x |
+| Req #5134 falhou migração | migrar-anexos.mjs | 1 anexo não migrado (Bad Request) |
 
 ---
 
-*Resumo gerado em 11/03/2026 com base na leitura completa do código-fonte.*
+*Resumo gerado em 11/03/2026. Atualizado com todas as correções e migrações da sessão.*
