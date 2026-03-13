@@ -22,6 +22,7 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
     fetchDados();
   }, []);
   const [filtroID, setFiltroID] = useState('');
+  const [filtroTitulo, setFiltroTitulo] = useState('');
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
   const [colunaArrastando, setColunaArrastando] = useState<string | null>(null);
@@ -69,11 +70,12 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
   const filtradas = useMemo(() => {
     return requisicoes.filter((r: any) => {
       const matchID = filtroID ? r.id.toString().includes(filtroID) : true;
+      const matchTitulo = filtroTitulo ? r.titulo?.toLowerCase().includes(filtroTitulo.toLowerCase()) : true;
       const matchForn = filtroFornecedor ? r.fornecedor === filtroFornecedor : true;
       const matchMes = filtroMes ? r.data?.startsWith(filtroMes) : true;
-      return matchID && matchForn && matchMes;
+      return matchID && matchTitulo && matchForn && matchMes;
     });
-  }, [requisicoes, filtroID, filtroFornecedor, filtroMes]);
+  }, [requisicoes, filtroID, filtroTitulo, filtroFornecedor, filtroMes]);
 
   const filterInputStyle = "w-full bg-slate-700/50 text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/40 transition-all placeholder:text-slate-500 appearance-none cursor-pointer border border-white/5";
 
@@ -83,7 +85,7 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
       {/* BARRA DE FILTROS */}
       <div className="w-full px-6 pt-6 pb-4">
         <div className="max-w-4xl mx-auto bg-slate-900/80 border border-white/10 p-4 rounded-xl">
-          <div className="grid grid-cols-[80px_1fr_1fr_auto] gap-3 items-center">
+          <div className="grid grid-cols-[80px_1fr_1fr_1fr_auto] gap-3 items-center">
 
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none"/>
@@ -93,6 +95,17 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
                 value={filtroID}
                 onChange={e => setFiltroID(e.target.value)}
                 className={`${filterInputStyle} pl-9 text-center`}
+              />
+            </div>
+
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+              <input
+                type="text"
+                placeholder="Buscar por título..."
+                value={filtroTitulo}
+                onChange={e => setFiltroTitulo(e.target.value)}
+                className={`${filterInputStyle} pl-9`}
               />
             </div>
 
@@ -120,8 +133,8 @@ export default function Kanban({ requisicoes, onUpdate, onPrint }: any) {
               </select>
             </div>
 
-            {(filtroID || filtroFornecedor || filtroMes) ? (
-              <button onClick={() => {setFiltroID(''); setFiltroFornecedor(''); setFiltroMes('')}} className="h-full px-4 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-bold uppercase tracking-wide transition-colors flex items-center gap-2">
+            {(filtroID || filtroTitulo || filtroFornecedor || filtroMes) ? (
+              <button onClick={() => {setFiltroID(''); setFiltroTitulo(''); setFiltroFornecedor(''); setFiltroMes('')}} className="h-full px-4 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-bold uppercase tracking-wide transition-colors flex items-center gap-2">
                 <X size={14} /> Limpar
               </button>
             ) : <div />}
